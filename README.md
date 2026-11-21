@@ -1,68 +1,65 @@
-# Tìm Giá Trị — bản code để phát triển
+# Tìm Giá Trị — Workbook 7 bước tìm giá trị cốt lõi
 
-Website tiếng Việt giúp người khác tự tìm ra giá trị cốt lõi của bản thân.
-Bản này được tách ra từ file HTML duy nhất đã xuất từ Muse (artifact `website-t-m-gi-tr`, bản v3 — bản đã sửa lỗi font: chỉ dùng Be Vietnam Pro + Noto Serif, đều hỗ trợ tiếng Việt).
+Website tiếng Việt dạng workbook tự làm giúp mỗi người tự tìm ra giá trị cốt lõi của bản thân — đi từ bằng chứng sống, qua lọc giá trị thật, đối chiếu điều không chịu nổi, xếp hạng bằng trực giác, kiểm chứng 5 câu hỏi, đến hành động cụ thể ngay trong tuần này.
 
-> **URL placeholder — chưa phải URL thật.** Toàn bộ link trong code (`index.html`, `robots.txt`, `sitemap.xml`) đang dùng `https://duyphuc1413.github.io/tim-gia-tri/` làm placeholder, vì tên repo GitHub thật chưa được chốt. Khi chốt tên repo, tìm-replace toàn bộ `duyphuc1413.github.io/tim-gia-tri` bằng URL Pages thật (xem mục “Đẩy lên GitHub Pages” bên dưới). Không đổi tên repo mà quên đổi URL thì OG/canonical/sitemap sẽ trỏ sai.
+- **Không cần backend, không cần build, không cần tài khoản.** Toàn bộ dữ liệu người dùng nhập chỉ lưu cục bộ trong trình duyệt (`localStorage`) và không gửi đi bất kỳ đâu.
+- **URL GitHub Pages mặc định:** `https://duyphuc1413.github.io/tim-gia-tri/` (nếu đổi tên repo hoặc gắn tên miền riêng, tìm-replace URL này trong `index.html`, `robots.txt` và `sitemap.xml`).
 
-## Chạy thử
-Không cần build, không cần backend, không cần cài gì.
-- Cách nhanh nhất: mở `index.html` bằng trình duyệt.
-- Cách đúng hơn (tránh lỗi font/cache khi mở file trực tiếp): chạy server tĩnh trong thư mục này, ví dụ `python3 -m http.server 8000` rồi mở `http://localhost:8000`.
+## Chạy thử cục bộ
 
-## Cấu trúc
-- `index.html` — toàn bộ nội dung và cấu trúc trang (nền tảng, lộ trình, hành trình 7 bước, bản đồ giá trị, FAQ). Đã có meta description, Open Graph, Twitter card, canonical và favicon SVG inline (chữ G trắng trên nền đỏ gạch).
-- `assets/css/style.css` — toàn bộ CSS. Phong cách workbook in: giấy trắng, mực đen, một màu nhấn đỏ gạch, góc vuông, không bo tròn / không nút pill. Cuối file có stylesheet in (`@media print`) — chỉ in phần bản đồ giá trị.
-- `assets/js/app.js` — toàn bộ logic hành trình 7 bước, không framework, vanilla JS. Gồm cả lưu tiến trình vào localStorage (xem bên dưới).
-- `robots.txt` — cho phép mọi bot, trỏ tới sitemap (URL placeholder, xem lưu ý ở đầu file này).
-- `sitemap.xml` — chỉ có 1 URL là trang chính (URL placeholder, xem lưu ý ở đầu file này).
+- **Mở trực tiếp:** mở `index.html` bằng trình duyệt (script được nạp theo chuẩn classic `defer`, không phụ thuộc ES modules nên chạy được cả qua `file://`).
+- **Chạy qua server tĩnh (khuyên dùng khi phát triển):**
+  ```bash
+  python3 -m http.server 8000
+  ```
+  Sau đó mở `http://localhost:8000`.
 
-## Hành trình 7 bước (trong `app.js`)
-1. Viết 6 khoảnh khắc định hình (cần tối thiểu 3 ô mới qua được).
-2. Chọn giá trị từ ngân hàng 48 giá trị (có thêm từ riêng, tối đa 15).
-3. Lọc giá trị thật / khát vọng / "nên có" (chỉ nhóm "đã sống" vào vòng xếp hạng).
-4. Chọn anti-values (điều không chịu nổi).
-5. Xếp hạng bằng so sánh từng cặp theo trực giác (giá trị khát vọng bị loại khỏi vòng so cặp).
-6. Kiểm chứng bằng 5 câu hỏi.
-7. Viết định nghĩa + hành động trong tuần này.
-Kết thúc: Bản đồ giá trị, nút sao chép, tải về (.txt) và in bản tổng kết.
+## Chạy kiểm thử tự động
 
-## Lưu tiến trình hoạt động như thế nào
-- Sau mỗi bước (và mỗi lần gõ/chọn), toàn bộ trạng thái được lưu vào `localStorage` của trình duyệt, key `tim-gia-tri-v1`: bước hiện tại, 6 ô trải nghiệm, giá trị đã chọn (kể cả từ tự thêm), phân loại, anti-values, các cặp đã so, điểm số, bảng xếp hạng, câu kiểm chứng, định nghĩa và hành động.
-- Mở lại trang trên **cùng trình duyệt, cùng thiết bị** là tự khôi phục đúng bước đang làm dở, kèm dòng trạng thái "Đã khôi phục tiến trình lưu lúc …". Không cần tài khoản, không gửi dữ liệu đi đâu — mọi thứ chỉ nằm trên máy người dùng.
-- Nút **“Lưu và quay lại sau”** (đầu hành trình): lưu ngay và hiện giờ đã lưu. Thực ra trang đã tự lưu sau mỗi bước, nút này chủ yếu để người dùng yên tâm đóng trang.
-- Nút **“Bắt đầu lại”** (đầu hành trình, và nút "Làm lại từ đầu" ở bước kết quả): hỏi xác nhận, rồi xóa key `tim-gia-tri-v1` và tải lại trang trắng.
-- Muốn giữ lại lâu dài hoặc mang sang máy khác: dùng nút sao chép / tải về (.txt) / in ở bước kết quả. localStorage không đồng bộ sang máy khác.
-- Lưu ý kỹ thuật: nếu trình duyệt ở chế độ ẩn danh chặn localStorage hoặc bộ nhớ đầy, hành trình vẫn chạy bình thường, chỉ không lưu được — code đã bọc `try/catch` cho mọi lần đọc/ghi.
+Dự án dùng bộ test runner tích hợp sẵn của Node.js (không cần `npm install`):
 
-## Font
-- Be Vietnam Pro (nội dung, nút, ô nhập) và Noto Serif (tiêu đề), tải từ Google Fonts trong `index.html`.
-- Đừng dùng lại font viết tay Caveat: nó không hỗ trợ tiếng Việt nên chữ có dấu bị vỡ font — đó chính là lỗi đã sửa ở bản v3.
+```bash
+node --test tests/core.test.js
+```
 
-## UX / Accessibility
-- Nút Tiếp tục/Quay lại dính ở cuối màn hình trên điện thoại (sticky footer); phần nội dung wizard có thêm khoảng đệm cuối trên mobile để không bị thanh nút che mất ô nhập cuối cùng.
-- Focus bàn phím rõ ràng (viền đỏ 3px) trên mọi nút, chip, ô nhập; chip giá trị và nút so cặp có `aria-label` đầy đủ, nút so cặp ghi rõ "Chọn X thay vì Y"; vùng so cặp có `aria-live="polite"` để trình đọc màn hình nghe được cặp mới.
-- Chọn bằng bàn phím: chip, nút phân loại, nút so cặp đều là `<button>` nên dùng Tab để di chuyển, Enter/Space để chọn; ô thêm từ riêng bấm Enter là thêm.
-- Có skip link "Bỏ qua tới hành trình" (chỉ hiện khi tab tới) ở đầu trang.
-- Chữ dài do người dùng nhập được ngắt dòng (`overflow-wrap: break-word`) để không tràn ngang trên điện thoại.
+## Cấu trúc mã nguồn
 
-## In bản tổng kết
-- Nút **“In bản tổng kết”** ở bước kết quả gọi `window.print()`. Stylesheet in chỉ giữ lại phần bản đồ giá trị (ẩn hero, menu, các phần giải thích, footer và cả các nút), ép nền trắng/chữ đen để in sạch.
+- `index.html` — toàn bộ cấu trúc nội dung (Hero, giải thích giá trị là gì, lộ trình 10 bước 0–9, hành trình tương tác 7 bước + bản đồ kết quả, soi xung đột, hướng dẫn người khác, duy trì, FAQ), kèm SEO meta, Open Graph, Twitter Card (`summary_large_image`), JSON-LD (`WebApplication` + `FAQPage`) và favicon SVG inline.
+- `assets/css/style.css` — hệ thống thiết kế phong cách **workbook in ấn**: giấy ấm, mực than, một màu nhấn đỏ gạch, góc sắc nét, hỗ trợ đầy đủ chế độ Sáng / Tối đạt chuẩn tương phản WCAG AA+, thanh điều hướng dính gọn một dòng, sticky footer trên di động (`overflow: clip`) và stylesheet in ấn (`@media print`) ép nền trắng/mực đen kể cả khi hệ điều hành đang bật Dark Mode.
+- `assets/js/data.js` — dữ liệu chuẩn (ngân hàng 48 giá trị, 18 anti-values, 5 câu kiểm chứng, cấu hình giới hạn) và toàn bộ hàm thuần xử lý nghiệp vụ: tìm kiếm tiếng Việt không dấu (`normalizeText`), xáo trộn cặp & đảo vế tránh thiên lệch vị trí (`buildShuffledPairs`), xếp hạng Copeland kết hợp đối đầu trực tiếp khi hòa điểm (`computeRanking`), chuẩn hóa/di trú dữ liệu `localStorage` (`sanitizeSavedState`), tạo bản tổng kết kèm ngày lập (`buildSummaryText`).
+- `assets/js/app.js` — bộ điều khiển giao diện & trạng thái hành trình: thanh tiến độ bấm nhảy bước trực tiếp, ngăn xem lại Bước 1 ngay trong Bước 2–3, đối chiếu Bước 3 ngay trong Bước 4, nút lùi 1 cặp (`Backspace`/`Z`) và phím tắt chọn nhanh (`←`/`→` hoặc `1`/`2`) ở Bước 5, bảo toàn kết quả khi quay lại từ Bước 6, lọc an toàn DOM (không nội suy dữ liệu người dùng vào `innerHTML`), tự lưu debounce vào `localStorage`, scroll-spy và nút đổi chế độ Sáng / Tối.
+- `assets/img/og-cover.png` — ảnh xem trước Open Graph / mạng xã hội (1200×630) đồng bộ phong cách workbook.
+- `tests/core.test.js` — unit test cho các hàm nghiệp vụ cốt lõi trong `assets/js/data.js`.
+- `robots.txt`, `sitemap.xml`, `.nojekyll` — cấu hình SEO và tối ưu xuất bản tĩnh trên GitHub Pages.
 
-## Sửa gì, ở đâu
-- Đổi câu chữ / thêm bước: sửa `index.html` và logic tương ứng trong `app.js`.
-- Đổi màu / bố cục / responsive: sửa `assets/css/style.css` (biến màu ở đầu file).
-- Thêm / bớt giá trị trong ngân hàng 48 giá trị: sửa mảng `VALUES` trong `app.js`.
-- Đổi key lưu tiến trình hoặc thêm trường lưu mới: sửa `STORAGE_KEY` và hàm `saveProgress`/`restoreSaved` trong `app.js` (nhớ tăng `version` nếu đổi cấu trúc dữ liệu đã lưu, để bản cũ không khôi phục sai).
-- Sau khi sửa, mở lại trang và đi hết 7 bước một lượt để kiểm tra, đặc biệt trên điện thoại (nút Tiếp tục/Quay lại dính cuối màn hình).
+## Hành trình 7 bước + Bản đồ kết quả
+
+1. **Bằng chứng sống:** viết 6 khoảnh khắc định hình (tối thiểu 3 ô, mỗi ô từ 10 ký tự; có hiển thị trạng thái từng ô).
+2. **Đặt tên giá trị:** chọn 5–15 từ từ ngân hàng 48 giá trị hoặc tự thêm từ riêng; có tìm kiếm tiếng Việt không dấu và ngăn mở xem lại khoảnh khắc Bước 1.
+3. **Lọc giá trị thật:** phân loại từng từ thành *Đã sống* (3–8 từ vào vòng xếp hạng), *Khát vọng* và *“Nên có”*.
+4. **Những điều không chịu nổi (anti-values):** chọn các giá trị đối nghịch kèm dải đối chiếu trực tiếp với nhóm *Đã sống* ở Bước 3 (có thể bỏ qua sau 1 lần xác nhận).
+5. **Xếp hạng bằng trực giác:** so sánh từng cặp đã xáo trộn thứ tự và vế trái/phải; hỗ trợ phím tắt `←`/`→` (`1`/`2`), hoàn tác cặp vừa chọn (`Backspace`/`Z`), và giữ nguyên kết quả nếu người dùng quay lại xem.
+6. **Kiểm chứng:** 5 câu hỏi tự soi; nếu chọn “Chưa chắc” sẽ hiện nút gợi ý quay thẳng về bước liên quan.
+7. **Định nghĩa & bài tập 100%:** viết định nghĩa bằng lời riêng và một hành động cụ thể làm trong tuần này cho Top 5.
+8. **Bản đồ giá trị:** hiển thị ngày lập, Top 5, giá trị phụ, anti-values, khát vọng và bằng chứng sống; hỗ trợ **Sao chép**, **Tải về `.txt`** (UTF-8 BOM, kèm ngày lập trong tên file) và **In bản tổng kết** sạch đẹp.
+
+## Lưu tiến trình cục bộ (`localStorage`)
+
+- Key lưu trữ: `tim-gia-tri-v1` (hỗ trợ đọc và tự di trú dữ liệu từ cấu trúc v1 lên v2 nên không làm mất tiến trình cũ của người dùng).
+- Tự lưu khi chuyển bước, bấm chọn và tự lưu debounce (350ms) khi đang gõ; tự xả bộ đệm khi đóng trang (`beforeunload`).
+- Nút **“Lưu và quay lại sau”** lưu ngay lập tức và báo giờ lưu; nút **“Bắt đầu lại”** hỏi xác nhận trước khi xóa sạch key lưu trữ.
+- Giao diện Sáng / Tối được lưu riêng tại key `tim-gia-tri-theme` (mặc định theo thiết lập hệ điều hành).
+
+## Font chữ
+
+- Dùng **Be Vietnam Pro** (nội dung, nút, ô nhập) và **Noto Serif** (tiêu đề, trích dẫn) từ Google Fonts — cả hai đều hỗ trợ đầy đủ dấu tiếng Việt. Không dùng lại font viết tay không hỗ trợ tiếng Việt.
 
 ## Đẩy lên GitHub Pages
-1. Chốt tên repo thật (ví dụ `tim-gia-tri` — hiện chưa chốt, xem lưu ý placeholder ở đầu file này).
-2. Tạo repo trên GitHub, đẩy toàn bộ thư mục này lên nhánh `main`, thư mục gốc.
-3. Bật Pages: Settings → Pages → Source: Deploy from a branch → Branch: `main`, thư mục `/ (root)`.
-4. Tìm-replace toàn bộ `duyphuc1413.github.io/tim-gia-tri` trong `index.html`, `robots.txt`, `sitemap.xml` bằng URL Pages thật, commit lại.
-5. Kiểm tra sau khi deploy: mở URL Pages, đi hết 7 bước, đóng trang mở lại xem tiến trình có khôi phục không, kiểm tra `https://<URL-thật>/robots.txt` và `/sitemap.xml` trả 200.
 
-## Lưu ý
-- Đây là trang tĩnh (static), không có tài khoản, không có server.
-- Muốn đưa lên mạng cho người khác dùng: deploy thư mục này lên GitHub Pages / Netlify / Vercel dưới dạng static site, hoặc đẩy lên repo GitHub rồi bật Pages.
+1. Đẩy mã nguồn lên nhánh `main` của repo `duyphuc1413/tim-gia-tri`.
+2. Vào **Settings → Pages → Build and deployment**: chọn **Source: Deploy from a branch**, **Branch: `main`**, thư mục **`/ (root)`**, rồi lưu.
+3. Sau khi triển khai xong, kiểm tra:
+   - `https://duyphuc1413.github.io/tim-gia-tri/`
+   - `https://duyphuc1413.github.io/tim-gia-tri/robots.txt`
+   - `https://duyphuc1413.github.io/tim-gia-tri/sitemap.xml`
+   - `https://duyphuc1413.github.io/tim-gia-tri/assets/img/og-cover.png`
