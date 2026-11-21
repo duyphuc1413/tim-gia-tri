@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://duyphuc1413.github.io/tim-gia-tri/sitemap.xml
