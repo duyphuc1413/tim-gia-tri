@@ -2007,3 +2007,147 @@ footer strong { color: var(--ink); }
 @media print {
   .growth-share-box, .pro-tabs { display: none !important; }
 }
+
+/* ==================== DAILY REFLECTION & STREAK ==================== */
+.daily-streak-card {
+  display: grid;
+  gap: 14px;
+}
+.streak-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  text-align: center;
+}
+.streak-num {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.streak-lbl {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.streak-dots {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 6px;
+}
+.streak-dot {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--muted);
+}
+.streak-dot.done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.streak-dot.today {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.daily-prompt-card {
+  display: grid;
+  gap: 12px;
+  border-left: 4px solid var(--accent);
+}
+.daily-prompt-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.daily-question {
+  font-family: var(--font-serif);
+  font-size: clamp(1.25rem, 2.6vw, 1.65rem);
+  line-height: 1.4;
+  margin: 0;
+}
+.daily-top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+.daily-top-lbl { color: var(--muted); }
+.daily-val-chip {
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.daily-rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.daily-time-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.daily-time-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.daily-time-custom input {
+  padding: 5px 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.daily-history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.daily-hist-card {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 4px;
+}
+.daily-hist-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.daily-hist-q {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.daily-hist-a {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .streak-dots {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}

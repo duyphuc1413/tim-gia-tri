@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Câu hỏi mỗi ngày &amp; Lịch nhắc — Tìm Giá Trị</title>
+  <meta name="description" content="Bộ 30 câu hỏi soi chiếu 1 phút mỗi ngày cá nhân hóa theo Top 5 giá trị cốt lõi, theo dõi chuỗi ngày liên tiếp và cài lịch nhắc hằng ngày." />
+  <meta name="theme-color" content="#A93226" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Noto+Serif:ital,wght@0,500;0,600;0,700;0,800;1,500;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="subpage">
+<nav class="site-nav" aria-label="Điều hướng chính">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">Tìm Giá Trị</a>
+    <div class="nav-links">
+      <a href="index.html#hanh-trinh">Workbook 7 bước</a>
+      <a href="compare.html">So sánh 2 người</a>
+      <a href="account.html">Tài khoản &amp; Pro</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap subpage-main">
+  <header class="subpage-head">
+    <p class="sec-tag">Thói quen 1 phút · Chu kỳ 30 câu hỏi cá nhân hóa</p>
+    <h1>Câu hỏi mỗi ngày</h1>
+    <p class="lede">Bảng giá trị chỉ có sức mạnh khi đi vào từng quyết định nhỏ hằng ngày. Trả lời 1 câu hỏi mỗi tối (hoặc mỗi sáng) để giữ la bàn của bạn luôn sáng.</p>
+  </header>
+
+  <!-- Chuỗi ngày liên tiếp (Streak) -->
+  <section class="panel daily-streak-card" aria-label="Chuỗi ngày liên tiếp">
+    <div class="streak-metrics">
+      <div>
+        <span class="streak-num" id="streakCurrent">0</span>
+        <span class="streak-lbl">ngày liên tiếp</span>
+      </div>
+      <div>
+        <span class="streak-num" id="streakLongest">0</span>
+        <span class="streak-lbl">kỷ lục cao nhất</span>
+      </div>
+      <div>
+        <span class="streak-num" id="streakTotal">0</span>
+        <span class="streak-lbl">tổng ngày đã soi</span>
+      </div>
+    </div>
+    <div id="streakDots" class="streak-dots" aria-label="Hoạt động 14 ngày gần nhất"></div>
+  </section>
+
+  <!-- Thẻ câu hỏi hôm nay -->
+  <section class="panel daily-prompt-card">
+    <div class="daily-prompt-head">
+      <p class="sec-tag" id="dailyPromptMeta">Ngày 1/30 · Sống đúng giá trị</p>
+      <button type="button" class="btn btn-ghost btn-small" id="nextPromptBtn">Đổi câu hỏi khác</button>
+    </div>
+    <h2 id="dailyQuestion" class="daily-question">Đang tải câu hỏi hôm nay…</h2>
+    <p id="dailyHint" class="intro"></p>
+
+    <div id="dailyTopValuesBar" class="daily-top-bar"></div>
+
+    <form id="dailyForm" class="account-form">
+      <div class="field">
+        <label for="dailyAnswer">Câu trả lời 1 phút của bạn hôm nay</label>
+        <textarea id="dailyAnswer" rows="3" maxlength="800" required placeholder="Viết 1–3 câu trung thực với chính mình…"></textarea>
+      </div>
+
+      <div class="daily-rating-row">
+        <span>Mức độ sống đúng giá trị hôm nay:</span>
+        <div id="dailyRatingPills" class="checkin-pills" role="radiogroup" aria-label="Điểm sống đúng giá trị hôm nay"></div>
+      </div>
+
+      <div class="growth-share-actions">
+        <button type="submit" class="btn btn-primary" id="dailySaveBtn">Lưu nhật ký hôm nay</button>
+        <a class="btn btn-ghost" href="index.html#hanh-trinh">Mở lại Top 5 giá trị</a>
+      </div>
+      <p id="dailyMsg" class="account-msg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <!-- Lịch nhắc hằng ngày -->
+  <section class="panel daily-reminder-card">
+    <p class="sec-tag">Lịch nhắc hằng ngày · Miễn phí</p>
+    <h3>Đặt giờ nhắc cố định để không quên</h3>
+    <p class="intro">Chọn khung giờ bạn rảnh nhất (thường là 07:30 sáng trước khi làm việc hoặc 20:30 tối trước khi ngủ). Trên điện thoại, bạn có thể thêm vào <strong>Lịch iPhone / Google Calendar (.ics)</strong> hoặc bật thông báo trực tiếp nếu đang dùng App iOS / Android.</p>
+
+    <div class="daily-time-presets">
+      <button type="button" class="btn btn-ghost btn-small" data-preset-time="07:30">07:30 Sáng</button>
+      <button type="button" class="btn btn-ghost btn-small" data-preset-time="12:30">12:30 Trưa</button>
+      <button type="button" class="btn btn-ghost btn-small" data-preset-time="20:30">20:30 Tối (Khuyên dùng)</button>
+      <label class="daily-time-custom">
+        <span>Giờ khác:</span>
+        <input id="reminderTimeInput" type="time" value="20:30" />
+      </label>
+    </div>
+
+    <div class="growth-share-actions" style="margin-top:12px">
+      <button type="button" class="btn btn-primary btn-small" id="downloadDailyIcsBtn">Tải lịch nhắc hằng ngày (.ics)</button>
+      <button type="button" class="btn btn-ghost btn-small" id="enableNativeNotifBtn">Bật thông báo trực tiếp (App iOS/Android)</button>
+    </div>
+    <p id="reminderMsg" class="account-msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- Nhật ký gần đây -->
+  <section class="panel">
+    <h3>Nhật ký soi chiếu gần đây</h3>
+    <div id="dailyHistoryList" class="daily-history-list">
+      <p class="empty-note">Chưa có bản ghi nào. Hãy bắt đầu ngày đầu tiên của bạn hôm nay!</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-links">
+      <a href="index.html">Workbook 7 bước</a> ·
+      <a href="compare.html">So sánh 2 người</a> ·
+      <a href="workshop.html">Gói Workshop &amp; Team</a> ·
+      <a href="account.html">Tài khoản &amp; Pro</a>
+    </p>
+  </div>
+</footer>
+
+<script defer src="assets/js/config.js"></script>
+<script defer src="assets/js/data.js"></script>
+<script defer src="assets/js/daily-core.js"></script>
+<script defer src="assets/js/native-reminders.js"></script>
+<script defer src="assets/js/analytics.js"></script>
+<script defer src="assets/js/daily-page.js"></script>
+</body>
+</html>

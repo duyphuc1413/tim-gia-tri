@@ -1,0 +1,26 @@
+{
+  "name": "tim-gia-tri-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ứng dụng di động iOS & Android cho Tìm Giá Trị (Capacitor)",
+  "scripts": {
+    "sync:web": "node scripts/copy-web.mjs",
+    "init:android": "npm run sync:web && npx cap add android",
+    "init:ios": "npm run sync:web && npx cap add ios",
+    "sync:android": "npm run sync:web && npx cap sync android",
+    "sync:ios": "npm run sync:web && npx cap sync ios",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

@@ -1,0 +1,32 @@
+name: Daily Email Reminders
+
+on:
+  schedule:
+    # 01:00 UTC = 08:00 sáng giờ Việt Nam (UTC+7)
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Supabase send-reminders function
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          FUNCTION_URL: https://mqjxqincygmmoylathcx.supabase.co/functions/v1/send-reminders
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET chưa được cấu hình trong GitHub Secrets — bỏ qua an toàn."
+            exit 0
+          fi
+          HTTP_CODE=$(curl -sS -o /tmp/reminder_res.txt -w "%{http_code}" \
+            -X POST "$FUNCTION_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -d '{}')
+          cat /tmp/reminder_res.txt
+          echo ""
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "send-reminders failed with HTTP $HTTP_CODE"
+            exit 1
+          fi

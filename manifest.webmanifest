@@ -1,0 +1,46 @@
+{
+  "name": "Tìm Giá Trị — La bàn giá trị cốt lõi",
+  "short_name": "Tìm Giá Trị",
+  "description": "Workbook 7 bước tìm giá trị cốt lõi, câu hỏi soi chiếu mỗi ngày, so sánh 2 người và kế hoạch BE–DO–HAVE.",
+  "lang": "vi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F7F3EB",
+  "theme_color": "#A93226",
+  "icons": [
+    {
+      "src": "assets/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Câu hỏi mỗi ngày",
+      "short_name": "Hằng ngày",
+      "url": "./daily.html",
+      "description": "Trả lời câu hỏi 1 phút hôm nay và giữ chuỗi sống đúng giá trị"
+    },
+    {
+      "name": "Workbook 7 bước",
+      "short_name": "Workbook",
+      "url": "./index.html#hanh-trinh",
+      "description": "Tiếp tục hành trình tìm giá trị cốt lõi"
+    },
+    {
+      "name": "So sánh 2 người",
+      "short_name": "So sánh",
+      "url": "./compare.html",
+      "description": "Xem Bản đồ giao thoa giá trị giữa 2 người"
+    }
+  ]
+}

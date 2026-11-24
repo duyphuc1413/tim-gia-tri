@@ -333,11 +333,13 @@
     });
 
     var openCmpLink = el("a", { className: "btn btn-ghost btn-small", href: "compare.html" }, "Mở trang So sánh →");
+    var dailyLink = el("a", { className: "btn btn-ghost btn-small", href: "daily.html" }, "Câu hỏi mỗi ngày & Lịch nhắc →");
 
     actions.appendChild(storyBtn);
     actions.appendChild(fbBtn);
     actions.appendChild(cmpBtn);
     actions.appendChild(openCmpLink);
+    actions.appendChild(dailyLink);
     box.appendChild(actions);
     box.appendChild(msg);
 
