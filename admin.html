@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23a93226'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+<title>Quản trị — Tìm Giá Trị</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="stylesheet" href="assets/css/admin.css" />
+</head>
+<body class="admin-body">
+
+<!-- CỔNG XÁC THỰC QUYỀN ADMIN -->
+<main id="adminGate" class="admin-gate">
+  <div class="panel admin-gate-card">
+    <p class="sec-tag">Khu vực quản trị · Tìm Giá Trị</p>
+    <h1 id="gateTitle">Đang kiểm tra quyền truy cập…</h1>
+    <p id="gateDesc" class="intro">Vui lòng đợi trong giây lát.</p>
+    <div id="gateSqlHint" class="admin-code-box" hidden>
+      <p>Nếu bạn là chủ hệ thống, chạy câu lệnh sau trong <strong>Supabase SQL Editor</strong> (sau khi đã chạy <code>0002_admin.sql</code>) rồi tải lại trang:</p>
+      <pre><code id="gateSqlCode">update public.profiles set role = 'admin' where email = 'email-cua-ban@example.com';</code></pre>
+    </div>
+    <div class="admin-gate-actions">
+      <a class="btn btn-primary" id="gateLoginBtn" href="account.html" hidden>Đăng nhập tài khoản →</a>
+      <button type="button" class="btn btn-primary" id="gateRetryBtn" hidden>Kiểm tra lại quyền</button>
+      <a class="btn btn-ghost" href="index.html">← Quay lại trang chính</a>
+    </div>
+  </div>
+</main>
+
+<!-- GIAO DIỆN QUẢN TRỊ CHÍNH -->
+<div id="adminShell" class="admin-shell" hidden>
+  <aside class="admin-sidebar" aria-label="Điều hướng quản trị">
+    <div class="admin-brand">
+      <span class="admin-brand-mark">G</span>
+      <div>
+        <strong>Tìm Giá Trị</strong>
+        <small>Bảng quản trị</small>
+      </div>
+    </div>
+
+    <nav class="admin-nav" role="tablist" aria-orientation="vertical">
+      <button type="button" class="admin-nav-btn active" data-section="overview" role="tab" aria-selected="true">Tổng quan</button>
+      <button type="button" class="admin-nav-btn" data-section="users" role="tab" aria-selected="false">Người dùng</button>
+      <button type="button" class="admin-nav-btn" data-section="orders" role="tab" aria-selected="false">Đơn hàng &amp; Doanh thu</button>
+      <button type="button" class="admin-nav-btn" data-section="audit" role="tab" aria-selected="false">Nhật ký quản trị</button>
+      <button type="button" class="admin-nav-btn" data-section="system" role="tab" aria-selected="false">Hệ thống</button>
+    </nav>
+
+    <div class="admin-sidebar-foot">
+      <a href="index.html" class="admin-foot-link">← Xem trang chính</a>
+      <a href="account.html" class="admin-foot-link">Trang tài khoản</a>
+    </div>
+  </aside>
+
+  <div class="admin-content">
+    <header class="admin-topbar">
+      <div>
+        <h1 id="sectionTitle">Tổng quan</h1>
+        <p id="adminIdentity" class="admin-sub"></p>
+      </div>
+      <div class="admin-topbar-actions">
+        <button type="button" class="btn btn-ghost btn-small" id="refreshBtn">Làm mới</button>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false">Chế độ tối</button>
+        <button type="button" class="btn btn-ghost btn-small" id="adminSignOutBtn">Đăng xuất</button>
+      </div>
+    </header>
+
+    <div id="adminToast" class="admin-toast" hidden role="status" aria-live="polite"></div>
+
+    <!-- 1. TỔNG QUAN -->
+    <section class="admin-section active" data-panel="overview">
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="charts-grid">
+        <div class="panel chart-card">
+          <div class="chart-head">
+            <div>
+              <h2>Doanh thu 30 ngày gần nhất</h2>
+              <p class="admin-sub" id="revChartSub">—</p>
+            </div>
+          </div>
+          <div id="revChart" class="svg-chart"></div>
+        </div>
+
+        <div class="panel chart-card">
+          <div class="chart-head">
+            <div>
+              <h2>Người đăng ký mới (30 ngày)</h2>
+              <p class="admin-sub" id="signupChartSub">—</p>
+            </div>
+          </div>
+          <div id="signupChart" class="svg-chart"></div>
+        </div>
+      </div>
+
+      <div class="overview-split">
+        <div class="panel">
+          <div class="card-head-row">
+            <h2>Đơn hàng gần đây</h2>
+            <button type="button" class="btn-link" data-jump="orders">Xem tất cả →</button>
+          </div>
+          <div id="recentOrdersBox" class="mini-list"></div>
+        </div>
+
+        <div class="panel">
+          <div class="card-head-row">
+            <h2>Nhật ký quản trị gần đây</h2>
+            <button type="button" class="btn-link" data-jump="audit">Xem tất cả →</button>
+          </div>
+          <div id="recentAuditBox" class="mini-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. NGƯỜI DÙNG -->
+    <section class="admin-section" data-panel="users" hidden>
+      <div class="toolbar-row">
+        <input type="search" id="userSearch" class="admin-input" placeholder="Tìm theo email, SĐT hoặc tên hiển thị…" aria-label="Tìm người dùng" />
+        <select id="userStatusFilter" class="admin-select" aria-label="Lọc trạng thái gói">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="paid">Đang dùng Pro</option>
+          <option value="trial">Đang dùng thử</option>
+          <option value="expired">Đã hết hạn</option>
+          <option value="admin">Quản trị viên</option>
+        </select>
+        <button type="button" class="btn btn-ghost btn-small" id="exportUsersCsvBtn">Xuất CSV</button>
+      </div>
+      <p id="usersSummary" class="admin-sub toolbar-meta"></p>
+      <div class="table-wrap panel">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Người dùng</th>
+              <th>Gói / Hạn</th>
+              <th>Hành trình</th>
+              <th>Tổng chi tiêu</th>
+              <th>Ngày tạo</th>
+              <th class="col-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="usersTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. ĐƠN HÀNG & DOANH THU -->
+    <section class="admin-section" data-panel="orders" hidden>
+      <div class="toolbar-row">
+        <input type="search" id="orderSearch" class="admin-input" placeholder="Tìm theo mã đơn, email hoặc SĐT…" aria-label="Tìm đơn hàng" />
+        <select id="orderStatusFilter" class="admin-select" aria-label="Lọc trạng thái đơn">
+          <option value="all">Tất cả đơn</option>
+          <option value="paid">Đã thanh toán</option>
+          <option value="pending">Chờ thanh toán</option>
+          <option value="cancelled">Đã hủy</option>
+          <option value="expired">Hết hạn</option>
+        </select>
+        <button type="button" class="btn btn-ghost btn-small" id="exportOrdersCsvBtn">Xuất CSV</button>
+      </div>
+      <p id="ordersSummary" class="admin-sub toolbar-meta"></p>
+      <div class="table-wrap panel">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Gói</th>
+              <th>Số tiền</th>
+              <th>Trạng thái</th>
+              <th>Thời gian</th>
+              <th class="col-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. NHẬT KÝ QUẢN TRỊ -->
+    <section class="admin-section" data-panel="audit" hidden>
+      <p class="admin-sub toolbar-meta">Mọi thao tác cộng ngày Pro, thu hồi Pro hoặc duyệt đơn thủ công đều được ghi nhận vĩnh viễn tại đây.</p>
+      <div class="table-wrap panel">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Quản trị viên</th>
+              <th>Thao tác</th>
+              <th>Đối tượng</th>
+              <th>Chi tiết / Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody id="auditTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. HỆ THỐNG -->
+    <section class="admin-section" data-panel="system" hidden>
+      <div class="system-grid" id="systemGrid"></div>
+      <div class="panel system-links">
+        <h2>Liên kết vận hành nhanh</h2>
+        <div class="form-row-actions">
+          <a class="btn btn-ghost btn-small" href="https://supabase.com/dashboard/project/mqjxqincygmmoylathcx" target="_blank" rel="noopener">Mở Supabase Dashboard ↗</a>
+          <a class="btn btn-ghost btn-small" href="https://my.payos.vn" target="_blank" rel="noopener">Mở PayOS Merchant ↗</a>
+          <a class="btn btn-ghost btn-small" href="privacy.html">Chính sách bảo mật</a>
+        </div>
+        <p class="admin-sub" style="margin-top:14px">
+          Lưu ý quyền riêng tư (Nghị định 13/2023/NĐ-CP): Bảng quản trị chỉ hiển thị số liệu tổng hợp và thông tin gói dịch vụ, <strong>không</strong> đọc nội dung chiêm nghiệm cá nhân trong hành trình của người dùng.
+        </p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- MODAL QUẢN LÝ NGƯỜI DÙNG -->
+<div id="userModal" class="admin-modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="admin-modal-backdrop" data-close-modal></div>
+  <div class="admin-modal-dialog panel">
+    <div class="card-head-row">
+      <h2 id="modalTitle">Quản lý gói người dùng</h2>
+      <button type="button" class="btn btn-ghost btn-small" data-close-modal>Đóng</button>
+    </div>
+    <p id="modalUserInfo" class="admin-sub"></p>
+
+    <div class="modal-section">
+      <h3>Cộng thêm ngày Pro</h3>
+      <div class="quick-days">
+        <button type="button" class="btn btn-ghost btn-small" data-preset-days="7">+7 ngày</button>
+        <button type="button" class="btn btn-ghost btn-small" data-preset-days="30">+30 ngày (1 tháng)</button>
+        <button type="button" class="btn btn-ghost btn-small" data-preset-days="365">+365 ngày (1 năm)</button>
+      </div>
+      <form id="grantProForm" class="account-form">
+        <div class="field">
+          <label for="grantDaysInput">Số ngày cộng thêm</label>
+          <input id="grantDaysInput" type="number" min="1" max="3650" value="30" required />
+        </div>
+        <div class="field">
+          <label for="grantNoteInput">Ghi chú lý do (lưu vào nhật ký quản trị)</label>
+          <input id="grantNoteInput" type="text" maxlength="250" placeholder="Ví dụ: Tặng trải nghiệm / Khách chuyển khoản trực tiếp" />
+        </div>
+        <div class="form-row-actions">
+          <button type="submit" class="btn btn-primary">Xác nhận cộng ngày Pro</button>
+          <button type="button" class="btn btn-ghost btn-danger" id="revokeProBtn">Thu hồi Pro ngay</button>
+        </div>
+      </form>
+      <p id="modalMsg" class="account-msg" role="status"></p>
+    </div>
+  </div>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script defer src="assets/js/config.js"></script>
+<script defer src="assets/js/billing-core.js"></script>
+<script defer src="assets/js/admin-core.js"></script>
+<script defer src="assets/js/auth.js"></script>
+<script defer src="assets/js/admin-page.js"></script>
+</body>
+</html>

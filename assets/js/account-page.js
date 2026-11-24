@@ -138,6 +138,15 @@
     $("profileReminderEmail").value = p.reminder_email || p.email || "";
     $("profileReminderOptIn").checked = p.reminder_opt_in !== false;
 
+    var statusActions = document.querySelector(".status-actions");
+    var existingAdminLink = $("adminPanelLink");
+    if (p.role === "admin" && statusActions && !existingAdminLink) {
+      var a = el("a", { id: "adminPanelLink", className: "btn btn-ghost", href: "admin.html" }, "Bảng quản trị");
+      statusActions.insertBefore(a, $("signOutBtn"));
+    } else if (p.role !== "admin" && existingAdminLink) {
+      existingAdminLink.remove();
+    }
+
     // Tải lịch sử hành trình đám mây
     Account.listJourneys().then(function (list) {
       var wrap = $("journeysList");

@@ -8,8 +8,13 @@ Frontend tĩnh của **Tìm Giá Trị** chạy trên GitHub Pages (`index.html`
 ## Bước 1 · Tạo dự án Supabase & chạy Migration CSDL
 
 1. Tạo dự án mới tại [supabase.com](https://supabase.com) (chọn region **Singapore** để tốc độ tốt tại Việt Nam).
-2. Mở **SQL Editor** → dán toàn bộ nội dung file [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) và bấm **Run** (hoặc dùng CLI: `supabase db push`).
-3. Kiểm tra 4 bảng đã được tạo: `public.profiles`, `public.orders`, `public.journeys`, `public.zalo_tokens` (tất cả đều bật RLS).
+2. Mở **SQL Editor** → lần lượt dán và bấm **Run** 2 file (hoặc dùng CLI `supabase db push`):
+   - [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) — bảng `profiles`, `orders`, `journeys`, `zalo_tokens`, trigger dùng thử 3 ngày & hàm `apply_paid_order`.
+   - [`supabase/migrations/0002_admin.sql`](../supabase/migrations/0002_admin.sql) — phân quyền `admin`, nhật ký `admin_audit_logs` và các RPC quản trị cho `admin.html`.
+3. Sau khi bạn đăng ký tài khoản của chính mình tại `account.html`, chạy lệnh sau trong **SQL Editor** để cấp quyền quản trị vào `admin.html`:
+   ```sql
+   update public.profiles set role = 'admin' where email = 'email-cua-ban@example.com';
+   ```
 
 ---
 

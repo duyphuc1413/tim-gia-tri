@@ -78,9 +78,19 @@
     }
     return client
       .from("profiles")
-      .select("id, email, phone, display_name, trial_ends_at, paid_until, reminder_opt_in, reminder_email, created_at")
+      .select("id, email, phone, display_name, role, trial_ends_at, paid_until, reminder_opt_in, reminder_email, created_at")
       .eq("id", state.user.id)
       .maybeSingle()
+      .then(function (res) {
+        if (res.error && /role/i.test(res.error.message || "")) {
+          return client
+            .from("profiles")
+            .select("id, email, phone, display_name, trial_ends_at, paid_until, reminder_opt_in, reminder_email, created_at")
+            .eq("id", state.user.id)
+            .maybeSingle();
+        }
+        return res;
+      })
       .then(function (res) {
         if (!res.error && res.data) {
           state.profile = res.data;
@@ -341,6 +351,8 @@
 
   window.TGTAccount = {
     isConfigured: function () { return state.configured; },
+    isAdmin: function () { return Boolean(state.profile && state.profile.role === "admin"); },
+    getClient: function () { return client; },
     ready: function () { return readyPromise; },
     getState: getState,
     refreshProfile: refreshProfile,
