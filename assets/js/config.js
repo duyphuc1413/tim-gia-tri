@@ -9,9 +9,9 @@
  * Xem hướng dẫn điền cấu hình tại: docs/SETUP-SUBSCRIPTION.md
  */
 window.TGT_CONFIG = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+  supabaseUrl: "https://mqjxqincygmmoylathcx.supabase.co",
+  supabaseAnonKey: "sb_publishable_rfURnzmoyA2o0S9CydyynA__Q0kQOx5",
   siteUrl: "https://duyphuc1413.github.io/tim-gia-tri",
-  enableGoogleLogin: true,
-  enablePhoneZaloLogin: true
+  enableGoogleLogin: false,
+  enablePhoneZaloLogin: false
 };
