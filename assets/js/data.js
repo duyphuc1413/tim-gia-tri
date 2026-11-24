@@ -573,6 +573,24 @@
       ? Math.floor(raw.maxStepReached)
       : step;
 
+    var extras = {};
+    if (raw.extras && typeof raw.extras === "object") {
+      if (Array.isArray(raw.extras.goals)) {
+        extras.goals = raw.extras.goals.slice(0, 21).reduce(function (acc, g) {
+          if (!g || typeof g !== "object") return acc;
+          acc.push({
+            domain: typeof g.domain === "string" ? g.domain.slice(0, 40) : "career",
+            be: typeof g.be === "string" ? g.be.slice(0, 300) : "",
+            doText: typeof g.doText === "string" ? g.doText.slice(0, 300) : "",
+            have: typeof g.have === "string" ? g.have.slice(0, 300) : "",
+            linkedValue: typeof g.linkedValue === "string" ? g.linkedValue.slice(0, 80) : "",
+            reverseCheck: typeof g.reverseCheck === "string" ? g.reverseCheck.slice(0, 300) : ""
+          });
+          return acc;
+        }, []);
+      }
+    }
+
     return {
       version: 2,
       journeyId: typeof raw.journeyId === "string" && /^[a-z0-9]{6,40}$/.test(raw.journeyId) ? raw.journeyId : "",
@@ -592,7 +610,8 @@
       scores: scores,
       ranking: ranking,
       verify: verify,
-      definitions: definitions
+      definitions: definitions,
+      extras: extras
     };
   }
 

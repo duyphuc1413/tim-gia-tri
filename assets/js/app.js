@@ -27,13 +27,16 @@
     scores: {},
     ranking: [],
     verify: {},
-    definitions: {}
+    definitions: {},
+    extras: {}
   };
 
   var antiSkipArmed = false;
   var verifyWarned = false;
   var isRestarting = false;
   var saveTimer = null;
+  var saveListeners = [];
+  var stepListeners = [];
 
   var $ = function (id) { return document.getElementById(id); };
   var panels = document.querySelectorAll(".wiz-panel");
@@ -278,6 +281,10 @@
 
     renderStepper();
     if (!options.skipSave) saveProgress();
+
+    stepListeners.forEach(function (fn) {
+      try { fn(n); } catch (e) {}
+    });
 
     if (!options.noScroll) {
       var wizEl = $("wizard");
@@ -1150,7 +1157,8 @@
       scores: state.scores,
       ranking: state.ranking,
       verify: state.verify,
-      definitions: state.definitions
+      definitions: state.definitions,
+      extras: state.extras || {}
     };
   }
 
@@ -1160,8 +1168,9 @@
       clearTimeout(saveTimer);
       saveTimer = null;
     }
+    var snapshot = buildSaveData();
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSaveData()));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
       var timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
       var status = $("saveStatus");
       if (status && (!silent || manual)) {
@@ -1177,6 +1186,9 @@
         setMsg("Trình duyệt đang chặn bộ nhớ cục bộ (localStorage). Hành trình vẫn hoạt động bình thường — hãy tải về hoặc sao chép bản tổng kết khi hoàn thành.");
       }
     }
+    saveListeners.forEach(function (fn) {
+      try { fn(snapshot, { manual: !!manual, silent: !!silent }); } catch (e) {}
+    });
   }
 
   function loadSaved() {
@@ -1202,6 +1214,7 @@
     state.ranking = d.ranking;
     state.verify = d.verify;
     state.definitions = d.definitions;
+    state.extras = d.extras && typeof d.extras === "object" ? d.extras : {};
     state.maxStepReached = d.maxStepReached;
 
     d.customValues.forEach(function (v) {
@@ -1390,6 +1403,37 @@
   window.addEventListener("beforeunload", function () {
     if (saveTimer) saveProgress(false, true);
   });
+
+  /* ---------- Public API for Pro / Cloud sync ---------- */
+  window.TimGiaTriApp = {
+    getState: function () { return buildSaveData(); },
+    getStep: function () { return state.step; },
+    getRanking: function () { return currentRanking(); },
+    getExperiences: function () { return getExperiences(); },
+    getExtras: function () { return state.extras || {}; },
+    setExtras: function (next) {
+      state.extras = next && typeof next === "object" ? next : {};
+      scheduleSave();
+    },
+    loadState: function (raw, opts) {
+      var clean = Core.sanitizeSavedState(raw);
+      if (!clean) return false;
+      expAreas.forEach(function (ta) { ta.value = ""; });
+      restoreSaved(clean);
+      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSaveData())); } catch (e) {}
+      showStep(clean.step, {
+        noScroll: opts && opts.noScroll !== undefined ? opts.noScroll : true,
+        skipSave: true
+      });
+      return true;
+    },
+    onSave: function (fn) {
+      if (typeof fn === "function") saveListeners.push(fn);
+    },
+    onStepChange: function (fn) {
+      if (typeof fn === "function") stepListeners.push(fn);
+    }
+  };
 
   /* ---------- Init & Restore ---------- */
   updateExpUI();

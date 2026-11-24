@@ -1,0 +1,18 @@
+# Cấu hình Supabase Edge Functions cho Tìm Giá Trị
+# Các hàm nhận webhook từ bên ngoài hoặc cron tắt verify_jwt ở cổng gateway
+# và tự xác thực chữ ký HMAC / Standard Webhooks / CRON_SECRET bên trong code.
+
+[functions.create-payment]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.payos-webhook]
+verify_jwt = false
+
+[functions.sms-hook]
+verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false

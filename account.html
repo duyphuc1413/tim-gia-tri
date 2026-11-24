@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#fcfbf8" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#161514" media="(prefers-color-scheme: dark)" />
+<meta name="description" content="Đăng nhập, dùng thử 3 ngày miễn phí và nâng cấp gói Tìm Giá Trị Pro — lưu đám mây, đồng bộ nhiều thiết bị, lịch sử nhiều năm và Bước 8 BE–DO–HAVE." />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23a93226'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E" />
+<title>Tài khoản &amp; Gói Pro — Tìm Giá Trị</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Noto+Serif:ital,wght@0,500;0,600;0,700;0,800;1,500;1,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<nav class="quicknav" aria-label="Điều hướng">
+  <div class="wrap quicknav-bar">
+    <div class="quicknav-inner">
+      <a href="index.html">← Quay lại workbook</a>
+      <a href="index.html#hanh-trinh">Làm hành trình</a>
+      <a href="privacy.html">Bảo mật &amp; Điều khoản</a>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">Chế độ tối</button>
+  </div>
+</nav>
+
+<main class="account-main">
+  <div class="wrap">
+    <header class="account-header">
+      <p class="sec-tag">Tài khoản &amp; Gói Pro</p>
+      <h1>Đồng hành cùng bảng giá trị qua nhiều năm</h1>
+      <p class="lede">Hành trình 7 bước cốt lõi luôn miễn phí và không cần đăng nhập. Tài khoản Pro giúp bạn lưu trữ đám mây, đồng bộ nhiều thiết bị, làm Bước 8 BE–DO–HAVE, nhận email nhắc soi lại hằng tháng và xuất báo cáo PDF A4.</p>
+    </header>
+
+    <div id="paymentBanner" class="account-banner" hidden role="status" aria-live="polite"></div>
+    <div id="setupNotice" class="tip-box" hidden>
+      <strong>Chế độ xem trước (chưa kết nối máy chủ)</strong>
+      Chủ trang chưa điền <code>supabaseUrl</code> và <code>supabaseAnonKey</code> trong <code>assets/js/config.js</code>. Bạn vẫn có thể xem bảng gói dịch vụ bên dưới và sử dụng toàn bộ hành trình 7 bước miễn phí tại <a href="index.html">trang chính</a>.
+    </div>
+
+    <!-- KHU VỰC ĐĂNG NHẬP / ĐĂNG KÝ (khi chưa đăng nhập) -->
+    <section id="authSection" class="account-grid" aria-label="Đăng nhập hoặc đăng ký">
+      <div class="panel auth-card">
+        <div class="auth-tabs" role="tablist" aria-label="Phương thức đăng nhập">
+          <button type="button" class="auth-tab active" data-auth-tab="email" role="tab" aria-selected="true">Email</button>
+          <button type="button" class="auth-tab" data-auth-tab="zalo" role="tab" aria-selected="false">SĐT · OTP Zalo</button>
+        </div>
+
+        <!-- Tab Email -->
+        <div id="tabEmail" class="auth-pane">
+          <div class="auth-mode-switch">
+            <button type="button" class="btn-link active" id="modeLoginBtn">Đăng nhập</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" class="btn-link" id="modeSignupBtn">Tạo tài khoản mới (dùng thử 3 ngày)</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" class="btn-link" id="modeForgotBtn">Quên mật khẩu</button>
+          </div>
+
+          <form id="emailAuthForm" class="account-form" novalidate>
+            <div class="field" id="displayNameField" hidden>
+              <label for="authName">Tên hiển thị (tùy chọn)</label>
+              <input id="authName" type="text" autocomplete="name" maxlength="80" placeholder="Ví dụ: Minh Anh" />
+            </div>
+            <div class="field">
+              <label for="authEmail">Email</label>
+              <input id="authEmail" type="email" required autocomplete="email" placeholder="ban@example.com" />
+            </div>
+            <div class="field" id="passwordField">
+              <label for="authPassword">Mật khẩu</label>
+              <input id="authPassword" type="password" required autocomplete="current-password" minlength="6" placeholder="Tối thiểu 6 ký tự" />
+            </div>
+            <button type="submit" class="btn btn-primary" id="emailSubmitBtn">Đăng nhập</button>
+          </form>
+        </div>
+
+        <!-- Tab SĐT + OTP Zalo -->
+        <div id="tabZalo" class="auth-pane" hidden>
+          <p class="auth-hint">Nhập số điện thoại Việt Nam — mã xác thực 6 số sẽ được gửi trực tiếp vào tài khoản <strong>Zalo</strong> của bạn (qua Zalo ZNS).</p>
+          <form id="zaloPhoneForm" class="account-form" novalidate>
+            <div class="field">
+              <label for="zaloPhone">Số điện thoại Việt Nam</label>
+              <input id="zaloPhone" type="tel" autocomplete="tel" placeholder="Ví dụ: 0901234567" />
+            </div>
+            <button type="submit" class="btn btn-primary" id="sendOtpBtn">Gửi mã OTP qua Zalo</button>
+          </form>
+
+          <form id="zaloVerifyForm" class="account-form" hidden novalidate>
+            <div class="field">
+              <label for="zaloOtp">Mã OTP (6 chữ số từ Zalo)</label>
+              <input id="zaloOtp" type="text" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="Nhập mã 6 số" />
+            </div>
+            <div class="form-row-actions">
+              <button type="submit" class="btn btn-primary" id="verifyOtpBtn">Xác nhận &amp; đăng nhập</button>
+              <button type="button" class="btn btn-ghost btn-small" id="resendOtpBtn">Gửi lại mã</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="auth-divider"><span>hoặc</span></div>
+        <button type="button" class="btn btn-ghost auth-google-btn" id="googleSignInBtn">Tiếp tục với Google</button>
+        <p class="account-msg" id="authMsg" role="status" aria-live="polite"></p>
+        <p class="auth-legal">Bằng việc đăng ký, bạn đồng ý với <a href="privacy.html">Chính sách bảo mật &amp; Điều khoản sử dụng</a>. Tài khoản mới tự động nhận <strong>3 ngày dùng thử Pro miễn phí</strong>, không cần thẻ ngân hàng.</p>
+      </div>
+
+      <aside class="panel pricing-summary">
+        <p class="sec-tag">Minh bạch chi phí</p>
+        <h2>Dùng thử 3 ngày · Không tự trừ tiền</h2>
+        <p class="intro">Hết 3 ngày dùng thử, dữ liệu bạn đã lưu vẫn luôn xem và tải về được — hệ thống không khóa hay xóa dữ liệu của bạn.</p>
+        <div class="mini-plans">
+          <div class="mini-plan">
+            <div>
+              <strong>Gói Tháng</strong>
+              <span>Thanh toán từng tháng qua VietQR</span>
+            </div>
+            <span class="mini-price">99.000đ<small>/tháng</small></span>
+          </div>
+          <div class="mini-plan featured">
+            <div>
+              <strong>Gói Năm · Tiết kiệm 33%</strong>
+              <span>Phù hợp vòng lặp soi hằng tháng &amp; làm lại hằng năm</span>
+            </div>
+            <span class="mini-price">790.000đ<small>/năm</small></span>
+          </div>
+        </div>
+        <ul class="pro-feature-list">
+          <li>Lưu đám mây &amp; đồng bộ giữa điện thoại và máy tính</li>
+          <li>Lịch sử hành trình qua nhiều năm</li>
+          <li>Bước 8 tương tác BE–DO–HAVE cho 7 lĩnh vực</li>
+          <li>Email nhắc soi lại hằng tháng</li>
+          <li>Xuất báo cáo PDF A4 dàn trang sẵn</li>
+        </ul>
+      </aside>
+    </section>
+
+    <!-- KHU VỰC TÀI KHOẢN (khi đã đăng nhập) -->
+    <section id="dashboardSection" hidden aria-label="Bảng điều khiển tài khoản">
+      <div class="panel status-card">
+        <div class="status-main">
+          <p class="sec-tag" id="planTag">Trạng thái gói</p>
+          <h2 id="planHeadline">Đang tải…</h2>
+          <p id="planSubline" class="intro"></p>
+        </div>
+        <div class="status-actions">
+          <a class="btn btn-primary" href="index.html#hanh-trinh">Mở workbook →</a>
+          <button type="button" class="btn btn-ghost" id="signOutBtn">Đăng xuất</button>
+        </div>
+      </div>
+
+      <!-- Khung đổi mật khẩu (hiện khi quay lại từ email reset) -->
+      <div id="recoveryBox" class="panel" hidden>
+        <h3>Đặt mật khẩu mới</h3>
+        <form id="recoveryForm" class="account-form inline-form">
+          <input id="newPasswordInput" type="password" minlength="6" required placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" />
+          <button type="submit" class="btn btn-primary">Lưu mật khẩu mới</button>
+        </form>
+        <p class="account-msg" id="recoveryMsg" role="status"></p>
+      </div>
+
+      <!-- Chọn / Gia hạn gói Pro -->
+      <section class="account-block">
+        <h3>Nâng cấp hoặc gia hạn Tìm Giá Trị Pro</h3>
+        <p class="intro">Thanh toán bằng chuyển khoản <strong>VietQR qua PayOS</strong> — tự động kích hoạt sau vài giây. Khi mua thêm gói khi đang còn hạn, thời gian mới được <strong>cộng dồn</strong> vào ngày hết hạn hiện tại.</p>
+        <div class="pricing-cards">
+          <div class="panel pricing-card">
+            <p class="sec-tag">Linh hoạt</p>
+            <h4>Gói Tháng</h4>
+            <p class="price-figure">99.000đ <span>/ tháng</span></p>
+            <p class="price-note">Không tự trừ tiền ngân hàng. Gần hết hạn hệ thống sẽ gửi email nhắc để bạn chủ động gia hạn.</p>
+            <button type="button" class="btn btn-ghost" data-buy-plan="monthly">Thanh toán 99.000đ qua VietQR</button>
+          </div>
+          <div class="panel pricing-card featured">
+            <p class="sec-tag">Tiết kiệm 33% · Khuyên dùng</p>
+            <h4>Gói Năm</h4>
+            <p class="price-figure">790.000đ <span>/ năm</span></p>
+            <p class="price-note">Tương đương ~66.000đ/tháng (rẻ hơn 398.000đ so với đóng lẻ 12 tháng). Đủ trọn một chu kỳ soi hằng tháng và làm lại hằng năm.</p>
+            <button type="button" class="btn btn-primary" data-buy-plan="yearly">Thanh toán 790.000đ qua VietQR</button>
+          </div>
+        </div>
+        <p class="account-msg" id="billingMsg" role="status" aria-live="polite"></p>
+      </section>
+
+      <!-- Lịch sử hành trình đám mây -->
+      <section class="account-block">
+        <h3>Lịch sử hành trình đã lưu trên đám mây</h3>
+        <div id="journeysList" class="cloud-list">
+          <p class="empty-note">Đang tải danh sách…</p>
+        </div>
+      </section>
+
+      <!-- Hồ sơ & Email nhắc nhở -->
+      <section class="account-block account-two-col">
+        <div class="panel">
+          <h3>Hồ sơ &amp; Email nhắc nhở</h3>
+          <form id="profileForm" class="account-form">
+            <div class="field">
+              <label for="profileName">Tên hiển thị</label>
+              <input id="profileName" type="text" maxlength="80" placeholder="Tên của bạn" />
+            </div>
+            <div class="field">
+              <label for="profileReminderEmail">Email nhận nhắc soi lại &amp; gia hạn</label>
+              <input id="profileReminderEmail" type="email" maxlength="120" placeholder="ban@example.com" />
+            </div>
+            <label class="check-row">
+              <input id="profileReminderOptIn" type="checkbox" />
+              <span>Nhận email nhắc soi lại bản đồ giá trị hằng tháng và nhắc trước khi hết hạn Pro</span>
+            </label>
+            <button type="submit" class="btn btn-primary btn-small">Lưu cài đặt</button>
+            <p class="account-msg" id="profileMsg" role="status"></p>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3>Lịch sử giao dịch</h3>
+          <div id="ordersList" class="orders-list">
+            <p class="empty-note">Chưa có giao dịch nào.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Xóa tài khoản (Nghị định 13) -->
+      <section class="account-block">
+        <div class="panel danger-card">
+          <h3>Quyền xóa dữ liệu cá nhân</h3>
+          <p class="intro">Bạn có thể xóa vĩnh viễn tài khoản cùng toàn bộ hành trình đã lưu trên máy chủ bất cứ lúc nào (theo Nghị định 13/2023/NĐ-CP). Dữ liệu đã lưu cục bộ trên trình duyệt không bị ảnh hưởng trừ khi bạn tự xóa.</p>
+          <button type="button" class="btn btn-ghost btn-small btn-danger" id="deleteAccountBtn">Xóa vĩnh viễn tài khoản</button>
+          <p class="account-msg" id="dangerMsg" role="status"></p>
+        </div>
+      </section>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="src">
+      <a href="index.html">Trang chính</a> ·
+      <a href="privacy.html">Chính sách bảo mật &amp; Điều khoản sử dụng</a>
+    </p>
+  </div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script defer src="assets/js/config.js"></script>
+<script defer src="assets/js/billing-core.js"></script>
+<script defer src="assets/js/auth.js"></script>
+<script defer src="assets/js/account-page.js"></script>
+</body>
+</html>
