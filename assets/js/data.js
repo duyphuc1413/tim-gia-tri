@@ -589,6 +589,61 @@
           return acc;
         }, []);
       }
+      if (Array.isArray(raw.extras.checkins)) {
+        extras.checkins = raw.extras.checkins.slice(0, 52).reduce(function (acc, c) {
+          if (!c || typeof c !== "object" || typeof c.date !== "string") return acc;
+          var sc = {};
+          if (c.scores && typeof c.scores === "object") {
+            Object.keys(c.scores).slice(0, 8).forEach(function (k) {
+              var n = Number(c.scores[k]);
+              if (n >= 1 && n <= 5) sc[String(k).slice(0, 80)] = Math.round(n);
+            });
+          }
+          acc.push({
+            date: c.date.slice(0, 32),
+            scores: sc,
+            note: typeof c.note === "string" ? c.note.slice(0, 300) : "",
+            pct: Math.max(0, Math.min(100, Math.round(Number(c.pct) || 0)))
+          });
+          return acc;
+        }, []);
+      }
+      if (raw.extras.decision && typeof raw.extras.decision === "object") {
+        var dec = raw.extras.decision;
+        extras.decision = {
+          question: typeof dec.question === "string" ? dec.question.slice(0, 200) : "",
+          options: Array.isArray(dec.options)
+            ? dec.options.slice(0, 4).reduce(function (acc, o) {
+                if (!o || typeof o !== "object") return acc;
+                var os = {};
+                if (o.scores && typeof o.scores === "object") {
+                  Object.keys(o.scores).slice(0, 8).forEach(function (k) {
+                    var n = Number(o.scores[k]);
+                    if (n >= 1 && n <= 5) os[String(k).slice(0, 80)] = Math.round(n);
+                  });
+                }
+                acc.push({
+                  name: typeof o.name === "string" ? o.name.slice(0, 120) : "",
+                  scores: os
+                });
+                return acc;
+              }, [])
+            : []
+        };
+      }
+      if (raw.extras.aiReport && typeof raw.extras.aiReport === "object" && Array.isArray(raw.extras.aiReport.sections)) {
+        extras.aiReport = {
+          mode: typeof raw.extras.aiReport.mode === "string" ? raw.extras.aiReport.mode.slice(0, 20) : "structured",
+          generatedAt: typeof raw.extras.aiReport.generatedAt === "string" ? raw.extras.aiReport.generatedAt.slice(0, 40) : "",
+          headline: typeof raw.extras.aiReport.headline === "string" ? raw.extras.aiReport.headline.slice(0, 220) : "",
+          sections: raw.extras.aiReport.sections.slice(0, 6).map(function (s) {
+            return {
+              title: s && typeof s.title === "string" ? s.title.slice(0, 140) : "",
+              body: s && typeof s.body === "string" ? s.body.slice(0, 1600) : ""
+            };
+          })
+        };
+      }
     }
 
     return {

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>So sánh Bản đồ Giá trị 2 người — Tìm Giá Trị</title>
+  <meta name="description" content="So sánh hệ giá trị cốt lõi giữa hai người (cặp đôi, bạn thân, đồng sáng lập) — tìm điểm đồng điệu, điểm bổ trợ và ranh giới đỏ cần tôn trọng." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Noto+Serif:ital,wght@0,500;0,600;0,700;0,800;1,500;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="subpage">
+<nav class="site-nav" aria-label="Điều hướng chính">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">Tìm Giá Trị</a>
+    <div class="nav-links">
+      <a href="index.html#hanh-trinh">← Quay lại Workbook</a>
+      <a href="workshop.html">Workshop &amp; Team</a>
+      <a href="account.html">Tài khoản &amp; Pro</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap subpage-main">
+  <header class="subpage-head">
+    <p class="sec-tag">So sánh 2 người · Miễn phí &amp; Riêng tư</p>
+    <h1>Bản đồ giao thoa giá trị</h1>
+    <p class="lede">Dành cho cặp đôi, vợ chồng, đồng sáng lập (co-founder) hoặc bạn thân. Toàn bộ dữ liệu so sánh nằm gọn trong đường dẫn — không lưu lên máy chủ.</p>
+  </header>
+
+  <section id="compareRoot" class="compare-root" aria-live="polite">
+    <div class="panel">
+      <p class="empty-note">Đang tải dữ liệu so sánh…</p>
+    </div>
+  </section>
+
+  <section class="panel compare-manual-box">
+    <h3>Dán đường dẫn mời so sánh của người kia</h3>
+    <p class="intro">Nếu bạn nhận được link mời (`compare.html#p=...`) qua tin nhắn, dán vào ô dưới đây để mở Bản đồ giao thoa ngay.</p>
+    <form id="pasteCompareForm" class="account-form inline-form">
+      <input id="pasteCompareInput" type="text" placeholder="Dán link mời so sánh hoặc mã sau dấu #p=…" required />
+      <button type="submit" class="btn btn-primary btn-small">So sánh ngay</button>
+    </form>
+    <p id="pasteCompareMsg" class="account-msg" role="status"></p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-links">
+      <a href="index.html">Workbook 7 bước</a> ·
+      <a href="workshop.html">Gói Workshop &amp; Team</a> ·
+      <a href="account.html">Tài khoản &amp; Pro</a> ·
+      <a href="privacy.html">Chính sách bảo mật</a>
+    </p>
+  </div>
+</footer>
+
+<script defer src="assets/js/config.js"></script>
+<script defer src="assets/js/data.js"></script>
+<script defer src="assets/js/growth-core.js"></script>
+<script defer src="assets/js/analytics.js"></script>
+<script defer src="assets/js/compare-page.js"></script>
+</body>
+</html>

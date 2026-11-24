@@ -285,7 +285,14 @@
   }
 
   function createPayment(plan) {
+    if (window.TGTAnalytics) {
+      window.TGTAnalytics.track("checkout_start", null, { plan: plan });
+    }
     return invokeEdge("create-payment", { plan: plan });
+  }
+
+  function requestAiAnalysis(payload) {
+    return invokeEdge("ai-analysis", payload);
   }
 
   function deleteAccount() {
@@ -369,6 +376,7 @@
     signOut: signOut,
     updateProfile: updateProfile,
     createPayment: createPayment,
+    requestAiAnalysis: requestAiAnalysis,
     deleteAccount: deleteAccount,
     listOrders: listOrders,
     listJourneys: listJourneys,

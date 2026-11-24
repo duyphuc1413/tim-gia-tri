@@ -118,18 +118,25 @@
           </div>
           <div class="mini-plan featured">
             <div>
-              <strong>Gói Năm · Tiết kiệm 33%</strong>
-              <span>Phù hợp vòng lặp soi hằng tháng &amp; làm lại hằng năm</span>
+              <strong>Gói Năm · Tiết kiệm 74%</strong>
+              <span>Chỉ ~25.000đ/tháng cho trọn 1 năm</span>
             </div>
-            <span class="mini-price">790.000đ<small>/năm</small></span>
+            <span class="mini-price">299.000đ<small>/năm</small></span>
+          </div>
+          <div class="mini-plan">
+            <div>
+              <strong>Gói Trọn Đời · Trả 1 lần</strong>
+              <span>Sở hữu vĩnh viễn + báo cáo AI &amp; PDF</span>
+            </div>
+            <span class="mini-price">499.000đ<small>/trọn đời</small></span>
           </div>
         </div>
         <ul class="pro-feature-list">
-          <li>Lưu đám mây &amp; đồng bộ giữa điện thoại và máy tính</li>
-          <li>Lịch sử hành trình qua nhiều năm</li>
+          <li>Báo cáo luận giải chuyên sâu (AI) viết riêng từ bằng chứng sống</li>
           <li>Bước 8 tương tác BE–DO–HAVE cho 7 lĩnh vực</li>
-          <li>Email nhắc soi lại hằng tháng</li>
-          <li>Xuất báo cáo PDF A4 dàn trang sẵn</li>
+          <li>Check-in sống đúng giá trị hằng tuần &amp; Ma trận ra quyết định</li>
+          <li>Lưu đám mây, đồng bộ nhiều thiết bị &amp; lịch sử qua nhiều năm</li>
+          <li>Email nhắc soi lại hằng tháng &amp; Xuất báo cáo PDF A4 dàn trang sẵn</li>
         </ul>
       </aside>
     </section>
@@ -162,20 +169,27 @@
       <section class="account-block">
         <h3>Nâng cấp hoặc gia hạn Tìm Giá Trị Pro</h3>
         <p class="intro">Thanh toán bằng chuyển khoản <strong>VietQR qua PayOS</strong> — tự động kích hoạt sau vài giây. Khi mua thêm gói khi đang còn hạn, thời gian mới được <strong>cộng dồn</strong> vào ngày hết hạn hiện tại.</p>
-        <div class="pricing-cards">
+        <div class="pricing-cards pricing-cards-3">
           <div class="panel pricing-card">
             <p class="sec-tag">Linh hoạt</p>
             <h4>Gói Tháng</h4>
             <p class="price-figure">99.000đ <span>/ tháng</span></p>
-            <p class="price-note">Không tự trừ tiền ngân hàng. Gần hết hạn hệ thống sẽ gửi email nhắc để bạn chủ động gia hạn.</p>
+            <p class="price-note">Không tự trừ tiền ngân hàng. Phù hợp khi bạn muốn trải nghiệm ngắn hạn toàn bộ công cụ Pro.</p>
             <button type="button" class="btn btn-ghost" data-buy-plan="monthly">Thanh toán 99.000đ qua VietQR</button>
           </div>
           <div class="panel pricing-card featured">
-            <p class="sec-tag">Tiết kiệm 33% · Khuyên dùng</p>
+            <p class="sec-tag">Tiết kiệm 74% · Khuyên dùng</p>
             <h4>Gói Năm</h4>
-            <p class="price-figure">790.000đ <span>/ năm</span></p>
-            <p class="price-note">Tương đương ~66.000đ/tháng (rẻ hơn 398.000đ so với đóng lẻ 12 tháng). Đủ trọn một chu kỳ soi hằng tháng và làm lại hằng năm.</p>
-            <button type="button" class="btn btn-primary" data-buy-plan="yearly">Thanh toán 790.000đ qua VietQR</button>
+            <p class="price-figure">299.000đ <span>/ năm</span></p>
+            <p class="price-note">Chỉ ~25.000đ/tháng. Đủ trọn chu kỳ báo cáo AI, check-in hằng tuần, soi hằng tháng và làm lại hằng năm.</p>
+            <button type="button" class="btn btn-primary" data-buy-plan="yearly">Thanh toán 299.000đ qua VietQR</button>
+          </div>
+          <div class="panel pricing-card">
+            <p class="sec-tag">Trả 1 lần · Không lo gia hạn</p>
+            <h4>Gói Trọn Đời</h4>
+            <p class="price-figure">499.000đ <span>/ trọn đời</span></p>
+            <p class="price-note">Thanh toán duy nhất một lần. Sở hữu vĩnh viễn mọi tính năng Pro, báo cáo AI và các cập nhật tương lai.</p>
+            <button type="button" class="btn btn-ghost" data-buy-plan="lifetime">Thanh toán 499.000đ qua VietQR</button>
           </div>
         </div>
         <p class="account-msg" id="billingMsg" role="status" aria-live="polite"></p>
@@ -236,6 +250,8 @@
   <div class="wrap">
     <p class="src">
       <a href="index.html">Trang chính</a> ·
+      <a href="compare.html">So sánh 2 người</a> ·
+      <a href="workshop.html">Gói Workshop &amp; Team</a> ·
       <a href="privacy.html">Chính sách bảo mật &amp; Điều khoản sử dụng</a>
     </p>
   </div>
@@ -244,6 +260,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script defer src="assets/js/config.js"></script>
 <script defer src="assets/js/billing-core.js"></script>
+<script defer src="assets/js/analytics.js"></script>
 <script defer src="assets/js/auth.js"></script>
 <script defer src="assets/js/account-page.js"></script>
 </body>

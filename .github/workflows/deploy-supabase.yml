@@ -47,3 +47,4 @@ jobs:
           supabase functions deploy payos-webhook --no-verify-jwt --remote="$SUPABASE_PROJECT_REF" --yes
           supabase functions deploy sms-hook --no-verify-jwt --remote="$SUPABASE_PROJECT_REF" --yes
           supabase functions deploy send-reminders --no-verify-jwt --remote="$SUPABASE_PROJECT_REF" --yes
+          supabase functions deploy ai-analysis --remote="$SUPABASE_PROJECT_REF" --yes

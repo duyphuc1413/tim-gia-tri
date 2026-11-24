@@ -21,10 +21,18 @@
     yearly: {
       id: "yearly",
       name: "Gói Năm",
-      price: 790000,
+      price: 299000,
       periodLabel: "/ năm",
       months: 12,
-      note: "Tương đương ~66.000đ/tháng — phù hợp vòng lặp soi hằng tháng & làm lại hằng năm."
+      note: "Chỉ ~25.000đ/tháng — đủ trọn chu kỳ check-in tuần, soi hằng tháng & làm lại hằng năm."
+    },
+    lifetime: {
+      id: "lifetime",
+      name: "Gói Trọn Đời",
+      price: 499000,
+      periodLabel: "/ trả 1 lần",
+      months: 1200,
+      note: "Trả 1 lần duy nhất, sở hữu vĩnh viễn mọi tính năng Pro, báo cáo AI & cập nhật tương lai."
     }
   };
 
@@ -68,7 +76,7 @@
 
   /**
    * Tính trạng thái quyền Pro từ hồ sơ `profiles`.
-   * Trả về { status: 'anonymous'|'trial'|'paid'|'expired', isPro, daysLeft, expiresAt, label }.
+   * Trả về { status: 'anonymous'|'trial'|'paid'|'expired', isPro, isLifetime, daysLeft, expiresAt, label }.
    */
   function computeEntitlement(profile, now) {
     var current = now instanceof Date ? now : new Date();
@@ -78,6 +86,7 @@
       return {
         status: "anonymous",
         isPro: false,
+        isLifetime: false,
         daysLeft: 0,
         expiresAt: null,
         label: "Miễn phí (chưa đăng nhập)"
@@ -91,12 +100,14 @@
 
     if (paidMs > nowMs) {
       var paidDays = Math.max(1, Math.ceil((paidMs - nowMs) / 86400000));
+      var isLifetime = paidDays > 3650;
       return {
         status: "paid",
         isPro: true,
+        isLifetime: isLifetime,
         daysLeft: paidDays,
         expiresAt: paidAt,
-        label: "Pro · còn " + paidDays + " ngày"
+        label: isLifetime ? "Pro Trọn đời" : ("Pro · còn " + paidDays + " ngày")
       };
     }
 

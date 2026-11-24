@@ -75,10 +75,11 @@ describe("PayOS signatures & server-side plans", () => {
     assert.equal(code, 1795000000000456);
   });
 
-  it("enforces fixed monthly/yearly server prices", async () => {
+  it("enforces fixed monthly/yearly/lifetime server prices", async () => {
     const payos = await loadShared("payos.js");
     assert.equal(payos.getPlan("monthly").amount, 99000);
-    assert.equal(payos.getPlan("yearly").amount, 790000);
+    assert.equal(payos.getPlan("yearly").amount, 299000);
+    assert.equal(payos.getPlan("lifetime").amount, 499000);
     assert.equal(payos.getPlan("free"), null);
   });
 });
@@ -105,11 +106,12 @@ describe("Vietnamese phone normalization (Zalo ZNS & Supabase Auth)", () => {
 describe("Billing core & entitlement calculations", () => {
   it("formats VND and computes yearly savings", () => {
     assert.equal(Billing.formatVnd(99000), "99.000đ");
-    assert.equal(Billing.formatVnd(790000), "790.000đ");
-    assert.equal(Billing.yearlySavingsPercent(), 33);
+    assert.equal(Billing.formatVnd(299000), "299.000đ");
+    assert.equal(Billing.formatVnd(499000), "499.000đ");
+    assert.equal(Billing.yearlySavingsPercent(), 74);
   });
 
-  it("computes trial, paid, expired, and anonymous states accurately", () => {
+  it("computes trial, paid, lifetime, expired, and anonymous states accurately", () => {
     const now = new Date("2026-11-24T00:00:00Z");
 
     const anon = Billing.computeEntitlement(null, now);
@@ -130,7 +132,17 @@ describe("Billing core & entitlement calculations", () => {
     );
     assert.equal(paid.status, "paid");
     assert.equal(paid.isPro, true);
+    assert.equal(paid.isLifetime, false);
     assert.equal(paid.daysLeft, 30);
+
+    const lifetime = Billing.computeEntitlement(
+      { trial_ends_at: "2026-11-26T00:00:00Z", paid_until: "2126-11-24T00:00:00Z" },
+      now
+    );
+    assert.equal(lifetime.status, "paid");
+    assert.equal(lifetime.isPro, true);
+    assert.equal(lifetime.isLifetime, true);
+    assert.equal(lifetime.label, "Pro Trọn đời");
 
     const expired = Billing.computeEntitlement(
       { trial_ends_at: "2026-11-20T00:00:00Z", paid_until: "2026-11-23T00:00:00Z" },

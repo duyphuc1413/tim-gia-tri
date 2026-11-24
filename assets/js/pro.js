@@ -2,9 +2,11 @@
   "use strict";
 
   var CLOUD_ID_KEY = "tim-gia-tri-cloud-id";
+  var PENDING_COMPARE_KEY = "tgt-pending-compare";
   var syncTimer = null;
   var syncing = false;
   var lastSyncedText = "";
+  var activeProTab = "ai";
 
   function el(tag, attrs, text) {
     var node = document.createElement(tag);
@@ -129,7 +131,9 @@
     var rank = App.getRanking();
     var exps = App.getExperiences();
     var defs = snap.definitions || {};
-    var goals = (snap.extras && Array.isArray(snap.extras.goals)) ? snap.extras.goals : [];
+    var extras = snap.extras || {};
+    var goals = Array.isArray(extras.goals) ? extras.goals : [];
+    var aiReport = extras.aiReport && Array.isArray(extras.aiReport.sections) ? extras.aiReport : null;
     var dateStr = Core.formatVietnameseDate(new Date());
     var domainMap = {};
     if (Billing && Billing.LIFE_DOMAINS) {
@@ -152,6 +156,15 @@
         "</div>"
       );
     }).join("");
+
+    var aiHtml = aiReport
+      ? "<section><h2>Luận giải chuyên sâu cá nhân hóa</h2>" +
+        (aiReport.headline ? "<p class='headline'>" + escapeHtml(aiReport.headline) + "</p>" : "") +
+        aiReport.sections.map(function (s) {
+          return "<div class='card'><h3>" + escapeHtml(s.title) + "</h3><p>" + escapeHtml(s.body) + "</p></div>";
+        }).join("") +
+        "</section>"
+      : "";
 
     var goalsHtml = goals.length
       ? "<section><h2>Kế hoạch BE–DO–HAVE theo giá trị</h2>" +
@@ -193,6 +206,7 @@
       ".kicker{font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#a93226;margin:0 0 6px}" +
       "h1{font-size:28px;margin:0 0 6px}" +
       ".meta{font-family:system-ui,sans-serif;font-size:13px;color:#666;margin:0}" +
+      ".headline{font-size:16px;font-style:italic;color:#a93226;margin:0 0 12px}" +
       "h2{font-size:17px;border-bottom:1px solid #ddd6ca;padding-bottom:6px;margin:24px 0 12px;color:#1d1b18}" +
       ".card{border:1px solid #e3ddd2;border-left:3px solid #a93226;padding:12px 14px;margin-bottom:10px;page-break-inside:avoid}" +
       ".row-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}" +
@@ -212,7 +226,7 @@
       "<h1>Bản đồ giá trị cốt lõi của tôi</h1>" +
       "<p class='meta'>Ngày lập: " + escapeHtml(dateStr) + "</p></header>" +
       "<section><h2>Thứ tự giá trị cốt lõi</h2>" + rankRows + "</section>" +
-      goalsHtml + antiHtml + expHtml +
+      aiHtml + goalsHtml + antiHtml + expHtml +
       "<footer>Nhắc mình: soi lại sau 24 giờ, hằng tháng và làm lại hằng năm. Đừng hỏi “tôi muốn trở thành người thế nào?” — hãy hỏi “đời tôi đã chứng minh tôi là người thế nào?”.</footer>" +
       "</body></html>";
 
@@ -221,83 +235,259 @@
     win.document.close();
   }
 
-  /* ---------- Render Bước 8 Pro panel (BE–DO–HAVE + Cloud + PDF) ---------- */
-  function renderProSection() {
-    var mount = document.getElementById("proResultMount");
-    var Account = window.TGTAccount;
-    var App = window.TimGiaTriApp;
-    var Billing = window.TimGiaTriBilling;
-    if (!mount || !Account || !App || !Billing) return;
+  /* ---------- Khối Viral miễn phí: Tải ảnh chia sẻ & Mời so sánh 2 người ---------- */
+  function buildShareAndCompareBox(App, Core, accState) {
+    var snap = App.getState();
+    var rank = App.getRanking();
+    if (!rank.length) return null;
 
-    mount.textContent = "";
-    var accState = Account.getState();
+    var box = el("div", { className: "growth-share-box" });
 
-    // Chưa Pro hoặc chưa đăng nhập -> hiện thẻ mời dùng thử 3 ngày / nâng cấp
-    if (!accState.configured || !accState.user || !accState.entitlement.isPro) {
-      var box = el("div", { className: "pro-upsell" });
-      var head = el("div", { className: "pro-upsell-head" });
-      head.appendChild(el("p", { className: "sec-tag" }, "Bước 8 mở rộng · Tìm Giá Trị Pro"));
-      head.appendChild(el("h4", null, "Biến bảng giá trị thành kế hoạch sống & lưu lại qua từng năm"));
-      head.appendChild(el("p", null,
-        "Hành trình 7 bước và tải file cục bộ luôn miễn phí. Nếu bạn muốn đồng bộ nhiều thiết bị, theo dõi hành trình qua các năm và đặt mục tiêu theo mô hình BE–DO–HAVE, hãy kích hoạt bản dùng thử 3 ngày miễn phí."));
-      box.appendChild(head);
-
-      var list = el("ul", { className: "pro-feature-list" });
-      [
-        "Lưu đám mây & tự động đồng bộ giữa điện thoại và máy tính.",
-        "Lưu lịch sử các lần làm qua nhiều năm để đối chiếu sự thay đổi.",
-        "Bước 8 tương tác: đặt mục tiêu BE–DO–HAVE cho 7 lĩnh vực gắn thẳng với top giá trị.",
-        "Email nhắc soi lại hằng tháng và nhắc trước ngày làm lại hằng năm.",
-        "Xuất báo cáo PDF A4 dàn trang sẵn để in hoặc lưu lâu dài."
-      ].forEach(function (t) {
-        list.appendChild(el("li", null, t));
-      });
-      box.appendChild(list);
-
-      var foot = el("div", { className: "pro-upsell-foot" });
-      var ctaLabel = accState.user ? "Nâng cấp gói Pro →" : "Đăng ký dùng thử 3 ngày miễn phí →";
-      foot.appendChild(el("a", { className: "btn btn-primary", href: "account.html" }, ctaLabel));
-      foot.appendChild(el("span", { className: "pro-price-hint" },
-        Billing.formatVnd(Billing.PLANS.monthly.price) + "/tháng · hoặc " +
-        Billing.formatVnd(Billing.PLANS.yearly.price) + "/năm (tiết kiệm " + Billing.yearlySavingsPercent() + "%)"));
-      box.appendChild(foot);
-      mount.appendChild(box);
-      return;
+    // Nếu người dùng đến từ link mời so sánh, hiện lời nhắc quay lại xem ngay
+    var pendingHash = "";
+    try { pendingHash = window.sessionStorage.getItem(PENDING_COMPARE_KEY) || ""; } catch (e) {}
+    if (pendingHash) {
+      var banner = el("div", { className: "compare-return-banner" });
+      banner.appendChild(el("span", null, "Bạn đang có lời mời so sánh giá trị từ một người bạn."));
+      banner.appendChild(el("a", {
+        className: "btn btn-primary btn-small",
+        href: "compare.html#p=" + encodeURIComponent(pendingHash)
+      }, "Xem Bản đồ giao thoa ngay →"));
+      box.appendChild(banner);
     }
 
-    // Đang trong 3 ngày dùng thử hoặc gói Pro
-    var wrap = el("div", { className: "pro-workspace" });
+    var head = el("div", { className: "growth-share-head" });
+    head.appendChild(el("p", { className: "sec-tag" }, "Chia sẻ & So sánh · Miễn phí"));
+    head.appendChild(el("h4", null, "Lưu ảnh Bản đồ Giá trị hoặc mời người thương / đồng sáng lập so sánh"));
+    head.appendChild(el("p", null,
+      "Xuất thẻ ảnh thẩm mỹ để đăng Story / Facebook, hoặc tạo đường dẫn so sánh riêng tư (chỉ chứa tên ngắn và Top 5 giá trị, không gửi dữ liệu lên máy chủ)."));
+    box.appendChild(head);
 
-    var bar = el("div", { className: "pro-toolbar" });
-    var info = el("div");
-    info.appendChild(el("strong", null, "Tìm Giá Trị Pro · " + accState.entitlement.label));
-    var statusP = el("p", { id: "proCloudStatus", className: "pro-status-note" },
-      lastSyncedText || "Tự động đồng bộ lên đám mây khi bạn chỉnh sửa.");
-    info.appendChild(statusP);
-    bar.appendChild(info);
+    var nameRow = el("div", { className: "growth-name-row" });
+    var defaultName = (accState && accState.profile && accState.profile.display_name) ? accState.profile.display_name : "";
+    var nameInput = el("input", {
+      type: "text",
+      maxlength: "40",
+      placeholder: "Tên hiển thị trên ảnh / link so sánh (tùy chọn)",
+      "aria-label": "Tên hiển thị trên ảnh hoặc link so sánh"
+    });
+    nameInput.value = defaultName;
+    nameRow.appendChild(nameInput);
+    box.appendChild(nameRow);
 
-    var btns = el("div", { className: "pro-toolbar-actions" });
-    var syncBtn = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "Lưu đám mây ngay");
-    syncBtn.addEventListener("click", function () { syncNow(true); });
-    var pdfBtn = el("button", { type: "button", className: "btn btn-primary btn-small" }, "Xuất báo cáo PDF A4");
-    pdfBtn.addEventListener("click", openDesignedPdfReport);
-    var accLink = el("a", { className: "btn btn-ghost btn-small", href: "account.html" }, "Lịch sử & Tài khoản");
-    btns.appendChild(syncBtn);
-    btns.appendChild(pdfBtn);
-    btns.appendChild(accLink);
-    bar.appendChild(btns);
-    wrap.appendChild(bar);
+    var actions = el("div", { className: "growth-share-actions" });
+    var msg = el("p", { className: "growth-share-msg", role: "status", "aria-live": "polite" });
 
-    // Bước 8: BE-DO-HAVE Builder
-    var bdh = el("div", { className: "bdh-section" });
-    bdh.appendChild(el("h4", null, "Bước 8 · Đặt mục tiêu theo mô hình BE – DO – HAVE"));
-    bdh.appendChild(el("p", { className: "intro" },
+    var storyBtn = el("button", { type: "button", className: "btn btn-primary btn-small" }, "Tải ảnh Story (9:16)");
+    storyBtn.addEventListener("click", function () {
+      if (!window.TGTShareCard) return;
+      window.TGTShareCard.download("story", {
+        name: nameInput.value.trim(),
+        ranking: rank,
+        antis: snap.antis || [],
+        definitions: snap.definitions || {},
+        dateStr: Core.formatVietnameseDate(new Date())
+      });
+      msg.textContent = "Đã tải ảnh Story (1080×1920) về máy.";
+    });
+
+    var fbBtn = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "Tải ảnh Facebook / LinkedIn (16:9)");
+    fbBtn.addEventListener("click", function () {
+      if (!window.TGTShareCard) return;
+      window.TGTShareCard.download("landscape", {
+        name: nameInput.value.trim(),
+        ranking: rank,
+        antis: snap.antis || [],
+        definitions: snap.definitions || {},
+        dateStr: Core.formatVietnameseDate(new Date())
+      });
+      msg.textContent = "Đã tải ảnh ngang (1200×630) về máy.";
+    });
+
+    var cmpBtn = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "Sao chép link mời so sánh 2 người");
+    cmpBtn.addEventListener("click", function () {
+      var Growth = window.TimGiaTriGrowth;
+      if (!Growth) return;
+      var encoded = Growth.encodeCompareProfile({
+        name: nameInput.value.trim(),
+        ranking: rank.slice(0, 5),
+        antis: (snap.antis || []).slice(0, 3)
+      });
+      if (!encoded) return;
+      var base = window.location.href.replace(/[#?].*$/, "").replace(/\/[^/]*$/, "/");
+      var url = base + "compare.html#p=" + encoded;
+
+      if (window.TGTAnalytics) {
+        window.TGTAnalytics.track("compare_invite_copy", 8, {});
+      }
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        navigator.clipboard.writeText(url).then(function () {
+          msg.textContent = "Đã sao chép link mời so sánh! Gửi link này cho người thương, bạn thân hoặc co-founder để xem Bản đồ giao thoa.";
+        }).catch(function () {
+          msg.textContent = "Link so sánh: " + url;
+        });
+      } else {
+        msg.textContent = "Link so sánh: " + url;
+      }
+    });
+
+    var openCmpLink = el("a", { className: "btn btn-ghost btn-small", href: "compare.html" }, "Mở trang So sánh →");
+
+    actions.appendChild(storyBtn);
+    actions.appendChild(fbBtn);
+    actions.appendChild(cmpBtn);
+    actions.appendChild(openCmpLink);
+    box.appendChild(actions);
+    box.appendChild(msg);
+
+    return box;
+  }
+
+  /* ---------- Soft Paywall với Blurred Preview cho người dùng miễn phí ---------- */
+  function buildProUpsell(App, Billing, accState) {
+    var rank = App.getRanking();
+    var top1 = rank[0] || "giá trị #1";
+    var top2 = rank[1] || "giá trị #2";
+
+    var box = el("div", { className: "pro-upsell" });
+    var head = el("div", { className: "pro-upsell-head" });
+    head.appendChild(el("p", { className: "sec-tag" }, "Mở khóa bản đầy đủ · Tìm Giá Trị Pro"));
+    head.appendChild(el("h4", null, "Báo cáo luận giải chuyên sâu cho “" + top1 + "” & “" + top2 + "” + Công cụ sống đúng giá trị"));
+    head.appendChild(el("p", null,
+      "Hành trình 7 bước và thẻ ảnh chia sẻ luôn miễn phí. Nâng cấp Pro (hoặc kích hoạt 3 ngày dùng thử miễn phí) để mở khóa bản phân tích sâu viết riêng cho bạn, kế hoạch BE–DO–HAVE, check-in hằng tuần và ma trận ra quyết định."));
+    box.appendChild(head);
+
+    // Preview mờ cá nhân hóa từ chính Top 2 của người dùng
+    var preview = el("div", { className: "pro-preview-card" });
+    preview.appendChild(el("p", { className: "pro-preview-kicker" }, "XEM TRƯỚC BÁO CÁO CÁ NHÂN HÓA CỦA BẠN"));
+    preview.appendChild(el("p", { className: "pro-preview-headline" }, "Trục định vị: “" + top1 + "” dẫn đường, “" + top2 + "” làm nền"));
+    var blurGrid = el("div", { className: "pro-preview-blur", "aria-hidden": "true" });
+    [
+      "1. Bản sắc cốt lõi từ 6 khoảnh khắc sống của bạn cho thấy cơ chế ra quyết định tiềm ẩn và lý do bạn thấy tràn đầy năng lượng khi…",
+      "2. Điểm căng nội tâm giữa " + top1 + " và " + top2 + ": tình huống cụ thể dễ khiến bạn cảm thấy tội lỗi hoặc bứt rứt…",
+      "3. Bẫy kiệt sức & môi trường công việc cần tránh dựa trên ranh giới đỏ của bạn…",
+      "4. Lộ trình thực hành 30 ngày + Ma trận chấm điểm quyết định theo trọng số Top 5…"
+    ].forEach(function (line) {
+      blurGrid.appendChild(el("p", null, line));
+    });
+    preview.appendChild(blurGrid);
+    box.appendChild(preview);
+
+    var list = el("ul", { className: "pro-feature-list" });
+    [
+      "Báo cáo luận giải chuyên sâu (AI) đọc trực tiếp bằng chứng sống & Top 5 của bạn.",
+      "Bước 8 tương tác: đặt mục tiêu BE–DO–HAVE cho 7 lĩnh vực đời sống.",
+      "Check-in sống đúng giá trị hằng tuần & Ma trận ra quyết định có trọng số Top 5.",
+      "Lưu đám mây, đồng bộ nhiều thiết bị, lịch sử nhiều năm & Xuất báo cáo PDF A4."
+    ].forEach(function (t) {
+      list.appendChild(el("li", null, t));
+    });
+    box.appendChild(list);
+
+    var foot = el("div", { className: "pro-upsell-foot" });
+    var ctaLabel = accState.user ? "Mở khóa Tìm Giá Trị Pro →" : "Mở khóa miễn phí 3 ngày dùng thử →";
+    var ctaLink = el("a", { className: "btn btn-primary", href: "account.html" }, ctaLabel);
+    ctaLink.addEventListener("click", function () {
+      if (window.TGTAnalytics) {
+        window.TGTAnalytics.track("pro_cta_click", 8, { loggedIn: !!accState.user });
+      }
+    });
+    foot.appendChild(ctaLink);
+    foot.appendChild(el("span", { className: "pro-price-hint" },
+      "Chỉ " + Billing.formatVnd(Billing.PLANS.yearly.price) + "/năm (tiết kiệm " + Billing.yearlySavingsPercent() + "%) · hoặc " +
+      Billing.formatVnd(Billing.PLANS.lifetime.price) + " trọn đời (trả 1 lần)"));
+    box.appendChild(foot);
+    return box;
+  }
+
+  /* ---------- Tab 1: Báo cáo luận giải chuyên sâu (AI) ---------- */
+  function renderAiTab(container, App, Account) {
+    var extras = App.getExtras();
+    var report = extras.aiReport && Array.isArray(extras.aiReport.sections) ? extras.aiReport : null;
+
+    var head = el("div", { className: "pro-tab-head" });
+    head.appendChild(el("h4", null, "Báo cáo luận giải chuyên sâu cá nhân hóa"));
+    head.appendChild(el("p", { className: "intro" },
+      "Hệ thống đọc trực tiếp 6 khoảnh khắc Bước 1, Top 5 giá trị và những điều bạn không chịu nổi để chỉ ra trục định vị, điểm căng nội tâm và bẫy kiệt sức của riêng bạn."));
+    container.appendChild(head);
+
+    var statusMsg = el("p", { className: "pro-status-note", role: "status", "aria-live": "polite" });
+    var genBtn = el("button", { type: "button", className: "btn btn-primary btn-small" },
+      report ? "Tạo lại bản luận giải mới" : "Tạo bản luận giải cá nhân hóa");
+    var bodyWrap = el("div", { className: "ai-report-body" });
+
+    function drawReport(rep) {
+      bodyWrap.textContent = "";
+      if (!rep) {
+        bodyWrap.appendChild(el("p", { className: "empty-note" },
+          "Bấm nút phía trên để sinh bản luận giải 4 phần cho bảng giá trị của bạn. Kết quả sẽ tự động lưu vào đám mây và đưa vào bản xuất PDF A4."));
+        return;
+      }
+      if (rep.headline) {
+        bodyWrap.appendChild(el("p", { className: "ai-headline" }, rep.headline));
+      }
+      rep.sections.forEach(function (sec) {
+        var card = el("div", { className: "ai-section-card" });
+        card.appendChild(el("h5", null, sec.title));
+        card.appendChild(el("p", null, sec.body));
+        bodyWrap.appendChild(card);
+      });
+      if (rep.generatedAt) {
+        bodyWrap.appendChild(el("p", { className: "pro-status-note" },
+          "Tạo lúc " + formatDateVi(rep.generatedAt) + (rep.mode === "structured" ? " · Chế độ phân tích cấu trúc." : " · Phân tích AI chuyên sâu.")));
+      }
+    }
+
+    genBtn.addEventListener("click", function () {
+      var snap = App.getState();
+      var rank = App.getRanking();
+      if (rank.length < 3) {
+        statusMsg.textContent = "Cần hoàn thành ít nhất 3 giá trị xếp hạng trước khi phân tích.";
+        return;
+      }
+      genBtn.disabled = true;
+      statusMsg.textContent = "Đang phân tích bảng giá trị & bằng chứng sống của bạn…";
+      if (window.TGTAnalytics) {
+        window.TGTAnalytics.track("ai_report_generate", 8, {});
+      }
+      Account.requestAiAnalysis({
+        ranking: rank.slice(0, 5),
+        antis: snap.antis || [],
+        definitions: snap.definitions || {},
+        experiences: App.getExperiences()
+      }).then(function (res) {
+        if (res && res.report) {
+          var cur = App.getExtras();
+          cur.aiReport = res.report;
+          App.setExtras(cur);
+          drawReport(res.report);
+          statusMsg.textContent = "Đã hoàn tất bản luận giải và lưu vào hành trình.";
+        } else {
+          statusMsg.textContent = "Chưa nhận được kết quả phân tích. Vui lòng thử lại.";
+        }
+      }).catch(function (err) {
+        statusMsg.textContent = (err && err.message) ? err.message : "Không thể kết nối máy chủ phân tích.";
+      }).finally(function () {
+        genBtn.disabled = false;
+      });
+    });
+
+    container.appendChild(genBtn);
+    container.appendChild(statusMsg);
+    drawReport(report);
+    container.appendChild(bodyWrap);
+  }
+
+  /* ---------- Tab 2: Bước 8 BE-DO-HAVE ---------- */
+  function renderBdhTab(container, App, Billing) {
+    container.appendChild(el("h4", null, "Bước 8 · Đặt mục tiêu theo mô hình BE – DO – HAVE"));
+    container.appendChild(el("p", { className: "intro" },
       "Chọn một lĩnh vực đời sống, neo vào một giá trị trong top của bạn, rồi trả lời ngược: để có điều mình muốn (HAVE), tôi cần làm gì đều đặn (DO), và trở thành người thế nào (BE)?"));
 
     var extras = App.getExtras();
     var goals = Billing.sanitizeGoals(extras.goals || []);
     var rank = App.getRanking();
-
     var listWrap = el("div", { className: "bdh-list" });
 
     function saveGoals(nextGoals) {
@@ -392,7 +582,7 @@
     }
 
     renderGoalCards();
-    bdh.appendChild(listWrap);
+    container.appendChild(listWrap);
 
     var addBtn = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "+ Thêm mục tiêu lĩnh vực");
     addBtn.addEventListener("click", function () {
@@ -413,9 +603,318 @@
       saveGoals(goals);
       renderGoalCards();
     });
-    bdh.appendChild(addBtn);
+    container.appendChild(addBtn);
+  }
 
-    wrap.appendChild(bdh);
+  /* ---------- Tab 3: Check-in sống đúng giá trị hằng tuần ---------- */
+  function renderCheckinTab(container, App) {
+    var Growth = window.TimGiaTriGrowth;
+    var rank = App.getRanking().slice(0, 5);
+    var extras = App.getExtras();
+    var checkins = Array.isArray(extras.checkins) ? extras.checkins.slice() : [];
+
+    container.appendChild(el("h4", null, "Check-in sống đúng giá trị (2 phút cuối tuần)"));
+    container.appendChild(el("p", { className: "intro" },
+      "Tuần vừa qua bạn đã sống đúng với từng giá trị trong Top 5 ở mức nào (1 = trượt xa, 5 = sống trọn vẹn)? Lưu lại đều đặn để theo dõi chỉ số đồng điệu theo thời gian."));
+
+    var draftScores = {};
+    rank.forEach(function (v) { draftScores[v] = 3; });
+
+    var form = el("div", { className: "checkin-form" });
+    var liveScore = el("p", { className: "checkin-live-score" }, "Chỉ số đồng điệu tuần này: 60%");
+
+    function updateLive() {
+      var pct = Growth ? Growth.computeCheckinScore(draftScores, rank) : 60;
+      liveScore.textContent = "Chỉ số đồng điệu tuần này: " + pct + "%";
+    }
+
+    rank.forEach(function (v, idx) {
+      var row = el("div", { className: "checkin-row" });
+      row.appendChild(el("span", { className: "checkin-label" }, "#" + (idx + 1) + " " + v));
+      var pills = el("div", { className: "checkin-pills" });
+      [1, 2, 3, 4, 5].forEach(function (num) {
+        var btn = el("button", {
+          type: "button",
+          className: "checkin-pill" + (num === 3 ? " active" : "")
+        }, String(num));
+        btn.addEventListener("click", function () {
+          draftScores[v] = num;
+          Array.prototype.forEach.call(pills.children, function (c) { c.classList.remove("active"); });
+          btn.classList.add("active");
+          updateLive();
+        });
+        pills.appendChild(btn);
+      });
+      row.appendChild(pills);
+      form.appendChild(row);
+    });
+
+    var noteInp = el("input", {
+      type: "text",
+      maxlength: "250",
+      placeholder: "Ghi chú 1 dòng: tuần này điều gì giúp bạn sống đúng (hoặc làm bạn lệch) giá trị?"
+    });
+    form.appendChild(noteInp);
+    form.appendChild(liveScore);
+
+    var saveBtn = el("button", { type: "button", className: "btn btn-primary btn-small" }, "Lưu Check-in tuần này");
+    var histWrap = el("div", { className: "checkin-history" });
+
+    function drawHistory() {
+      histWrap.textContent = "";
+      if (!checkins.length) {
+        histWrap.appendChild(el("p", { className: "empty-note" }, "Chưa có lịch sử check-in nào."));
+        return;
+      }
+      histWrap.appendChild(el("h5", null, "Lịch sử Check-in (" + checkins.length + " lần)"));
+      checkins.slice(0, 10).forEach(function (c) {
+        var item = el("div", { className: "checkin-hist-item" });
+        var meta = el("div", { className: "checkin-hist-meta" });
+        meta.appendChild(el("strong", null, c.pct + "%"));
+        meta.appendChild(el("span", null, formatDateVi(c.date)));
+        item.appendChild(meta);
+        var barTrack = el("div", { className: "checkin-bar-track" });
+        var barFill = el("div", { className: "checkin-bar-fill" });
+        barFill.style.width = Math.max(4, Math.min(100, c.pct || 0)) + "%";
+        barTrack.appendChild(barFill);
+        item.appendChild(barTrack);
+        if (c.note) item.appendChild(el("p", { className: "checkin-hist-note" }, c.note));
+        histWrap.appendChild(item);
+      });
+    }
+
+    saveBtn.addEventListener("click", function () {
+      var pct = Growth ? Growth.computeCheckinScore(draftScores, rank) : 60;
+      checkins.unshift({
+        date: new Date().toISOString(),
+        scores: Object.assign({}, draftScores),
+        note: noteInp.value.trim(),
+        pct: pct
+      });
+      checkins = checkins.slice(0, 52);
+      var cur = App.getExtras();
+      cur.checkins = checkins;
+      App.setExtras(cur);
+      noteInp.value = "";
+      drawHistory();
+    });
+
+    form.appendChild(saveBtn);
+    container.appendChild(form);
+    drawHistory();
+    container.appendChild(histWrap);
+  }
+
+  /* ---------- Tab 4: Ma trận ra quyết định có trọng số Top 5 ---------- */
+  function renderDecisionTab(container, App) {
+    var Growth = window.TimGiaTriGrowth;
+    var rank = App.getRanking().slice(0, 5);
+    var extras = App.getExtras();
+    var dec = (extras.decision && typeof extras.decision === "object")
+      ? extras.decision
+      : {
+          question: "",
+          options: [
+            { name: "Phương án A", scores: {} },
+            { name: "Phương án B", scores: {} }
+          ]
+        };
+    if (!Array.isArray(dec.options) || dec.options.length < 2) {
+      dec.options = [
+        { name: "Phương án A", scores: {} },
+        { name: "Phương án B", scores: {} }
+      ];
+    }
+
+    function persist() {
+      var cur = App.getExtras();
+      cur.decision = dec;
+      App.setExtras(cur);
+    }
+
+    container.appendChild(el("h4", null, "Ma trận ra quyết định theo trọng số Top 5"));
+    container.appendChild(el("p", { className: "intro" },
+      "Đang phân vân đổi việc, nhận dự án hay chọn hướng đi? Chấm từng phương án từ 1–5 theo Top 5 giá trị — hệ thống tự nhân trọng số (#1 = 5x, #2 = 4x, ..., #5 = 1x) để chỉ ra lựa chọn đồng điệu nhất."));
+
+    var qInp = el("input", {
+      type: "text",
+      maxlength: "200",
+      placeholder: "Ví dụ: Nên nhận lời mời công ty mới hay ở lại xây team hiện tại?"
+    });
+    qInp.value = dec.question || "";
+    qInp.addEventListener("input", function () {
+      dec.question = qInp.value;
+      persist();
+    });
+    container.appendChild(qInp);
+
+    var optWrap = el("div", { className: "decision-options" });
+    var resultWrap = el("div", { className: "decision-results" });
+
+    function drawResults() {
+      resultWrap.textContent = "";
+      if (!Growth) return;
+      var ranked = Growth.scoreDecisionOptions(dec.options, rank);
+      if (!ranked.length) return;
+      resultWrap.appendChild(el("h5", null, "Kết quả xếp hạng độ phù hợp giá trị"));
+      ranked.forEach(function (r, idx) {
+        var row = el("div", { className: "decision-res-row" + (idx === 0 ? " top" : "") });
+        row.appendChild(el("strong", null, (idx === 0 ? "★ " : "") + r.name));
+        row.appendChild(el("span", null, r.pct + "% phù hợp (" + r.weighted + "/" + r.maxWeight + " điểm trọng số)"));
+        resultWrap.appendChild(row);
+      });
+    }
+
+    function drawOptions() {
+      optWrap.textContent = "";
+      dec.options.forEach(function (opt, oIdx) {
+        var card = el("div", { className: "decision-card" });
+        var head = el("div", { className: "decision-card-head" });
+        var nameInp = el("input", { type: "text", maxlength: "120", placeholder: "Tên phương án" });
+        nameInp.value = opt.name || "";
+        nameInp.addEventListener("input", function () {
+          dec.options[oIdx].name = nameInp.value;
+          persist();
+          drawResults();
+        });
+        head.appendChild(nameInp);
+        if (dec.options.length > 2) {
+          var rm = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "Xóa");
+          rm.addEventListener("click", function () {
+            dec.options.splice(oIdx, 1);
+            persist();
+            drawOptions();
+            drawResults();
+          });
+          head.appendChild(rm);
+        }
+        card.appendChild(head);
+
+        rank.forEach(function (v, vIdx) {
+          var row = el("div", { className: "decision-val-row" });
+          row.appendChild(el("span", null, "#" + (vIdx + 1) + " " + v + " (×" + (5 - vIdx) + ")"));
+          var sel = el("select", { "aria-label": v });
+          var curVal = (opt.scores && opt.scores[v]) ? Number(opt.scores[v]) : 3;
+          [1, 2, 3, 4, 5].forEach(function (n) {
+            var o = el("option", { value: String(n) }, n + " / 5");
+            if (n === curVal) o.selected = true;
+            sel.appendChild(o);
+          });
+          sel.addEventListener("change", function () {
+            if (!dec.options[oIdx].scores) dec.options[oIdx].scores = {};
+            dec.options[oIdx].scores[v] = Number(sel.value);
+            persist();
+            drawResults();
+          });
+          row.appendChild(sel);
+          card.appendChild(row);
+        });
+
+        optWrap.appendChild(card);
+      });
+    }
+
+    drawOptions();
+    drawResults();
+    container.appendChild(optWrap);
+
+    if (dec.options.length < 4) {
+      var addOptBtn = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "+ Thêm phương án");
+      addOptBtn.addEventListener("click", function () {
+        if (dec.options.length >= 4) return;
+        dec.options.push({ name: "Phương án " + String.fromCharCode(65 + dec.options.length), scores: {} });
+        persist();
+        drawOptions();
+        drawResults();
+      });
+      container.appendChild(addOptBtn);
+    }
+    container.appendChild(resultWrap);
+  }
+
+  /* ---------- Render Bước 8: Viral Box + Pro Workspace ---------- */
+  function renderProSection() {
+    var mount = document.getElementById("proResultMount");
+    var Account = window.TGTAccount;
+    var App = window.TimGiaTriApp;
+    var Billing = window.TimGiaTriBilling;
+    var Core = window.TimGiaTriCore;
+    if (!mount || !Account || !App || !Billing || !Core) return;
+
+    mount.textContent = "";
+    var accState = Account.getState();
+
+    // 1. Luôn hiển thị khối Chia sẻ ảnh & Mời so sánh 2 người (miễn phí cho mọi user)
+    var shareBox = buildShareAndCompareBox(App, Core, accState);
+    if (shareBox) mount.appendChild(shareBox);
+
+    // 2. Chưa Pro hoặc chưa đăng nhập -> hiện Soft Paywall kèm preview mờ cá nhân hóa
+    if (!accState.configured || !accState.user || !accState.entitlement.isPro) {
+      mount.appendChild(buildProUpsell(App, Billing, accState));
+      return;
+    }
+
+    // 3. Đang trong 3 ngày dùng thử / gói Pro / Trọn đời -> Pro Workspace 4 tab
+    var wrap = el("div", { className: "pro-workspace" });
+
+    var bar = el("div", { className: "pro-toolbar" });
+    var info = el("div");
+    info.appendChild(el("strong", null, "Tìm Giá Trị Pro · " + accState.entitlement.label));
+    var statusP = el("p", { id: "proCloudStatus", className: "pro-status-note" },
+      lastSyncedText || "Tự động đồng bộ lên đám mây khi bạn chỉnh sửa.");
+    info.appendChild(statusP);
+    bar.appendChild(info);
+
+    var btns = el("div", { className: "pro-toolbar-actions" });
+    var syncBtn = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "Lưu đám mây ngay");
+    syncBtn.addEventListener("click", function () { syncNow(true); });
+    var pdfBtn = el("button", { type: "button", className: "btn btn-primary btn-small" }, "Xuất báo cáo PDF A4");
+    pdfBtn.addEventListener("click", openDesignedPdfReport);
+    var accLink = el("a", { className: "btn btn-ghost btn-small", href: "account.html" }, "Lịch sử & Tài khoản");
+    btns.appendChild(syncBtn);
+    btns.appendChild(pdfBtn);
+    btns.appendChild(accLink);
+    bar.appendChild(btns);
+    wrap.appendChild(bar);
+
+    var tabs = el("div", { className: "pro-tabs", role: "tablist" });
+    var tabBody = el("div", { className: "pro-tab-panel" });
+
+    var tabDefs = [
+      { id: "ai", label: "Luận giải AI" },
+      { id: "bdh", label: "Bước 8 · BE–DO–HAVE" },
+      { id: "checkin", label: "Check-in tuần" },
+      { id: "decision", label: "Ma trận quyết định" }
+    ];
+
+    function renderActiveTab() {
+      tabBody.textContent = "";
+      Array.prototype.forEach.call(tabs.children, function (btn) {
+        btn.classList.toggle("active", btn.getAttribute("data-tab") === activeProTab);
+      });
+      if (activeProTab === "ai") renderAiTab(tabBody, App, Account);
+      else if (activeProTab === "bdh") renderBdhTab(tabBody, App, Billing);
+      else if (activeProTab === "checkin") renderCheckinTab(tabBody, App);
+      else if (activeProTab === "decision") renderDecisionTab(tabBody, App);
+    }
+
+    tabDefs.forEach(function (t) {
+      var btn = el("button", {
+        type: "button",
+        className: "pro-tab-btn" + (t.id === activeProTab ? " active" : ""),
+        "data-tab": t.id,
+        role: "tab"
+      }, t.label);
+      btn.addEventListener("click", function () {
+        activeProTab = t.id;
+        renderActiveTab();
+      });
+      tabs.appendChild(btn);
+    });
+
+    wrap.appendChild(tabs);
+    wrap.appendChild(tabBody);
+    renderActiveTab();
     mount.appendChild(wrap);
   }
 
@@ -450,7 +949,6 @@
         }
       }
 
-      // Nếu thiết bị này chưa có dữ liệu nhưng đám mây đã có -> hiện banner gợi ý khôi phục
       var snap = App.getState();
       var localEmpty =
         Object.keys(snap.exps || {}).length === 0 &&

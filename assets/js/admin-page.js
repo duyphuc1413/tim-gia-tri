@@ -280,6 +280,64 @@
           audBox.appendChild(row);
         });
       }
+
+      // Phễu chuyển đổi (30 ngày)
+      var funnelBox = $("funnelStatsBox");
+      if (funnelBox) {
+        rpc("admin_funnel_stats", { p_days: 30 }).then(function (fData) {
+          funnelBox.textContent = "";
+          var evts = (fData && Array.isArray(fData.events)) ? fData.events : [];
+          if (!evts.length) {
+            funnelBox.appendChild(el("p", { className: "empty-note" }, "Chưa có dữ liệu phễu trong 30 ngày qua."));
+            return;
+          }
+          var labels = {
+            page_view: "Lượt xem trang",
+            step_1_start: "Bắt đầu Bước 1",
+            step_3_filter: "Đến Bước 3 (Lọc)",
+            step_5_rank: "Đến Bước 5 (Xếp hạng)",
+            step_8_result: "Hoàn thành Bản đồ (Bước 8)",
+            share_card_download: "Tải ảnh chia sẻ",
+            compare_invite_copy: "Tạo link so sánh 2 người",
+            compare_view: "Xem Bản đồ giao thoa",
+            ai_report_generate: "Tạo luận giải AI",
+            pro_cta_click: "Bấm CTA nâng cấp Pro",
+            checkout_start: "Khởi tạo thanh toán VietQR",
+            workshop_lead_submit: "Gửi yêu cầu Workshop"
+          };
+          evts.forEach(function (ev) {
+            var row = el("div", { className: "mini-row" });
+            var left = el("div");
+            left.appendChild(el("strong", null, labels[ev.event_name] || ev.event_name));
+            left.appendChild(el("small", null, ev.total_events + " lượt sự kiện"));
+            row.appendChild(left);
+            row.appendChild(el("span", { className: "badge" }, ev.unique_sessions + " phiên"));
+            funnelBox.appendChild(row);
+          });
+        }).catch(function () {});
+      }
+
+      // Danh sách yêu cầu Workshop / Team
+      var leadsBox = $("workshopLeadsBox");
+      if (leadsBox) {
+        rpc("admin_list_workshop_leads", { p_limit: 10 }).then(function (leads) {
+          leadsBox.textContent = "";
+          var items = Array.isArray(leads) ? leads : [];
+          if (!items.length) {
+            leadsBox.appendChild(el("p", { className: "empty-note" }, "Chưa có yêu cầu tư vấn Workshop nào."));
+            return;
+          }
+          items.forEach(function (ld) {
+            var row = el("div", { className: "mini-row" });
+            var left = el("div");
+            left.appendChild(el("strong", null, ld.full_name + (ld.organization ? " · " + ld.organization : "")));
+            left.appendChild(el("small", null, ld.email + " · " + (ld.team_size || "") + " · " + formatDateTimeVi(ld.created_at)));
+            row.appendChild(left);
+            row.appendChild(el("span", { className: "badge" }, ld.status || "new"));
+            leadsBox.appendChild(row);
+          });
+        }).catch(function () {});
+      }
     });
   }
 

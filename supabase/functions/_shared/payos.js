@@ -16,15 +16,23 @@ export const PLANS = Object.freeze({
   yearly: Object.freeze({
     id: "yearly",
     name: "Tìm Giá Trị Pro (1 năm)",
-    amount: 790000,
+    amount: 299000,
     description: "TGT PRO 1N",
     months: 12
+  }),
+  lifetime: Object.freeze({
+    id: "lifetime",
+    name: "Tìm Giá Trị Pro (Trọn đời)",
+    amount: 499000,
+    description: "TGT PRO TRON DOI",
+    months: 1200
   })
 });
 
 export function getPlan(planId) {
   if (planId === "monthly") return PLANS.monthly;
   if (planId === "yearly") return PLANS.yearly;
+  if (planId === "lifetime") return PLANS.lifetime;
   return null;
 }
 

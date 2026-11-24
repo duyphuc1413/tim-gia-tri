@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
 
   const plan = getPlan(body.plan);
   if (!plan) {
-    return jsonResponse({ error: "Gói dịch vụ không hợp lệ (chọn monthly hoặc yearly)." }, 400, cors);
+    return jsonResponse({ error: "Gói dịch vụ không hợp lệ (chọn monthly, yearly hoặc lifetime)." }, 400, cors);
   }
 
   const orderCode = generateOrderCode();
