@@ -38,12 +38,12 @@ jobs:
         run: supabase db push --remote --include-all --yes
 
       - name: Set SITE_URL secret
-        run: supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" SITE_URL="$SITE_URL"
+        run: supabase secrets set --remote="$SUPABASE_PROJECT_REF" --yes SITE_URL="$SITE_URL"
 
       - name: Deploy Edge Functions
         run: |
-          supabase functions deploy create-payment --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy delete-account --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy payos-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy sms-hook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
-          supabase functions deploy send-reminders --no-verify-jwt --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy create-payment --remote="$SUPABASE_PROJECT_REF" --yes
+          supabase functions deploy delete-account --remote="$SUPABASE_PROJECT_REF" --yes
+          supabase functions deploy payos-webhook --no-verify-jwt --remote="$SUPABASE_PROJECT_REF" --yes
+          supabase functions deploy sms-hook --no-verify-jwt --remote="$SUPABASE_PROJECT_REF" --yes
+          supabase functions deploy send-reminders --no-verify-jwt --remote="$SUPABASE_PROJECT_REF" --yes
