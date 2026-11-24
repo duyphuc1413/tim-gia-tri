@@ -1225,3 +1225,19 @@ footer strong { color: var(--ink); }
   .define-card { padding: 16px; }
   .result-actions .btn { flex: 1 1 100%; }
 }
+
+/* ---------- Gợi ý từ Bước 1, đọc ngược Bước 4, so sánh lịch sử ---------- */
+.mention-hints { font-size: .9rem; color: var(--muted); margin: 0 0 14px; }
+.mention-hints:empty { display: none; }
+.chip.hinted { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.anti-echo { margin-top: 20px; border: 1px solid var(--line); border-top: 3px solid var(--accent); padding: 16px 18px; background: var(--surface); }
+.anti-echo:empty { display: none; }
+.anti-echo > strong { display: block; font-family: var(--font-serif); font-size: 1.06rem; margin-bottom: 8px; }
+.anti-echo ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: .94rem; }
+.echo-hit { font-weight: 700; color: var(--ink); }
+.echo-miss { color: var(--muted); }
+.echo-note { margin-top: 10px; font-size: .92rem; color: var(--ink-2); line-height: 1.6; }
+.compare .btn { margin-top: 12px; }
+@media print {
+  .compare .btn { display: none !important; }
+}

@@ -137,3 +137,94 @@ describe("buildSummaryText", () => {
     assert.match(out, /Nấu ăn ở Đà Lạt/);
   });
 });
+
+describe("ANTI_MAP & readAntis", () => {
+  it("maps every anti-value to values that exist in the value bank", () => {
+    Core.ANTIS.forEach((a) => {
+      assert.ok(Array.isArray(Core.ANTI_MAP[a]) && Core.ANTI_MAP[a].length, "missing map for " + a);
+      Core.ANTI_MAP[a].forEach((v) => assert.ok(Core.VALUES.includes(v), v + " not in VALUES"));
+    });
+  });
+
+  it("marks matches with lived values and suggests missed values only for unmatched antis", () => {
+    const r = Core.readAntis(["Bị kiểm soát", "Nhàm chán", "Tự đặt"], ["Tự do"]);
+    assert.equal(r.rows.length, 2);
+    assert.deepEqual(r.rows[0].hit, ["Tự do"]);
+    assert.deepEqual(r.missed, ["Phiêu lưu", "Khám phá", "Tò mò", "Sáng tạo"]);
+  });
+});
+
+describe("findMentionedValues", () => {
+  it("finds whole words written in Step 1 without partial matches", () => {
+    const found = Core.findMentionedValues(["Tôi quý tự do, và gia đình."], Core.VALUES);
+    assert.deepEqual(found, ["Tự do", "Gia đình"]);
+    assert.deepEqual(Core.findMentionedValues(["tintin"], ["Tin cậy"]), []);
+  });
+});
+
+describe("history: compareRankings, sanitizeHistory, upsertHistory", () => {
+  it("reports kept (with movement), added and dropped values", () => {
+    const d = Core.compareRankings(["A", "B", "C"], ["B", "A", "D"]);
+    assert.deepEqual(d.kept, [{ value: "B", delta: 1 }, { value: "A", delta: -1 }]);
+    assert.deepEqual(d.added, ["D"]);
+    assert.deepEqual(d.dropped, ["C"]);
+  });
+
+  it("drops invalid entries, dedupes by id, sorts by date and caps length", () => {
+    const raw = [
+      { id: "b", date: "2026-02-01T00:00:00Z", ranking: ["X"] },
+      { id: "a", date: "2025-01-01T00:00:00Z", ranking: ["Y"] },
+      { id: "a", date: "2025-05-01T00:00:00Z", ranking: ["Z"] },
+      { id: "c", date: "not a date", ranking: ["X"] },
+      { id: "d", date: "2026-03-01T00:00:00Z", ranking: [] },
+      null
+    ];
+    const h = Core.sanitizeHistory(raw);
+    assert.deepEqual(h.map((x) => x.id), ["a", "b"]);
+    const many = Array.from({ length: 15 }, (_, i) => ({ id: "j" + i, date: new Date(2026, 0, i + 1).toISOString(), ranking: ["A"] }));
+    assert.equal(Core.sanitizeHistory(many).length, 10);
+  });
+
+  it("replaces the entry of the same journey instead of duplicating it", () => {
+    let h = Core.upsertHistory([], { id: "j1", date: "2026-01-01T00:00:00Z", ranking: ["A"], antis: [] });
+    h = Core.upsertHistory(h, { id: "j1", date: "2026-01-02T00:00:00Z", ranking: ["B"], antis: [] });
+    assert.equal(h.length, 1);
+    assert.deepEqual(h[0].ranking, ["B"]);
+  });
+});
+
+describe("buildIcs", () => {
+  const ics = Core.buildIcs({ ranking: ["Tự do", "A;b,c"], uid: "abc123", now: new Date(2026, 10, 24, 9, 0, 0) });
+  const lines = ics.split("\r\n");
+
+  it("contains 3 events with local 20:00 start times and a monthly rule", () => {
+    assert.equal((ics.match(/BEGIN:VEVENT/g) || []).length, 3);
+    assert.ok(lines.includes("DTSTART:20261125T200000"));
+    assert.ok(lines.includes("DTSTART:20261224T200000"));
+    assert.ok(lines.includes("DTSTART:20271124T200000"));
+    assert.ok(lines.includes("RRULE:FREQ=MONTHLY;COUNT=12"));
+  });
+
+  it("folds lines at 75 UTF-8 bytes and escapes special characters", () => {
+    const enc = new TextEncoder();
+    lines.forEach((l) => assert.ok(enc.encode(l).length <= 75, l));
+    assert.ok(ics.replace(/\r\n /g, "").includes("A\\;b\\,c"));
+  });
+});
+
+describe("conflictQuestions & summary", () => {
+  it("personalises conflict questions and adds them plus missed values to the summary", () => {
+    assert.deepEqual(Core.conflictQuestions(["A"]), []);
+    const q = Core.conflictQuestions(["A", "B", "C"]);
+    assert.equal(q.length, 3);
+    assert.ok(q[2].includes("“C”") && q[2].includes("“A”"));
+    const text = Core.buildSummaryText({ ranking: ["A", "B"], missed: ["Tò mò"], dateStr: "01/01/2026" });
+    assert.ok(text.includes("CÓ THỂ ĐÃ BỎ SÓT"));
+    assert.ok(text.includes("BA CÂU TỰ SOI XUNG ĐỘT"));
+  });
+
+  it("keeps a valid journeyId and rejects a malformed one when restoring", () => {
+    assert.equal(Core.sanitizeSavedState({ version: 2, selected: [], journeyId: "abc123def" }).journeyId, "abc123def");
+    assert.equal(Core.sanitizeSavedState({ version: 2, selected: [], journeyId: "<script>" }).journeyId, "");
+  });
+});

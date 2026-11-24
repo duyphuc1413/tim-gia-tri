@@ -6,9 +6,15 @@
 
   var STORAGE_KEY = "tim-gia-tri-v1";
   var THEME_KEY = "tim-gia-tri-theme";
+  var HISTORY_KEY = "tim-gia-tri-history-v1";
   var LIMITS = Core.LIMITS;
 
+  function newJourneyId() {
+    return (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)).toLowerCase();
+  }
+
   var state = {
+    journeyId: newJourneyId(),
     step: 1,
     maxStepReached: 1,
     selected: [],
@@ -250,16 +256,25 @@
     });
 
     setMsg("");
-    if (n === 2) renderExpReference("expRefStep2");
+    if (n === 2) {
+      renderExpReference("expRefStep2");
+      renderMentionHints();
+    }
     if (n === 3) {
       renderExpReference("expRefStep3");
       renderFilter();
     }
-    if (n === 4) renderLivedReference("livedRefStep4");
+    if (n === 4) {
+      renderLivedReference("livedRefStep4");
+      renderAntiEcho();
+    }
     if (n === 5) renderDuelIntro();
     if (n === 6) renderVerify();
     if (n === 7) renderDefine();
-    if (n === 8) renderResult();
+    if (n === 8) {
+      recordHistory();
+      renderResult();
+    }
 
     renderStepper();
     if (!options.skipSave) saveProgress();
@@ -341,6 +356,47 @@
     container.appendChild(box);
   }
 
+  /* Step 2: gạch chân những từ người dùng đã tự viết ra ở Bước 1 (chỉ là gợi ý) */
+  function renderMentionHints() {
+    var hintEl = $("mentionHints");
+    var texts = getExperiences().map(function (e) { return e.text; });
+    var chips = bank.querySelectorAll(".chip");
+    var values = Array.prototype.map.call(chips, function (c) { return c.dataset.value; });
+    var mentioned = Core.findMentionedValues(texts, values);
+    chips.forEach(function (c) { c.classList.toggle("hinted", mentioned.indexOf(c.dataset.value) >= 0); });
+    if (hintEl) {
+      hintEl.textContent = mentioned.length
+        ? "Những từ bạn đã tự viết ra ở Bước 1 (gạch chân bên dưới): " + mentioned.join(", ") + ". Đây chỉ là gợi ý — chọn vì nó vang lên, không phải vì nó xuất hiện."
+        : "";
+    }
+  }
+
+  /* Step 4: đọc ngược điều không chịu nổi → giá trị, đối chiếu với nhóm "đã sống" */
+  function renderAntiEcho() {
+    var zone = $("antiEcho");
+    if (!zone) return;
+    zone.textContent = "";
+    var reading = Core.readAntis(state.antis, livedValues());
+    if (!reading.rows.length) return;
+    zone.appendChild(el("strong", null, "Đọc ngược các lựa chọn của bạn"));
+    var ul = el("ul");
+    reading.rows.forEach(function (r) {
+      var li = el("li");
+      li.appendChild(document.createTextNode("Không chịu nổi “" + r.anti + "” → thường chỉ về "));
+      r.implied.forEach(function (v, i) {
+        var isHit = r.hit.indexOf(v) >= 0;
+        li.appendChild(el("span", { className: isHit ? "echo-hit" : "echo-miss" }, v + (isHit ? " ✓" : "")));
+        if (i < r.implied.length - 1) li.appendChild(document.createTextNode(", "));
+      });
+      li.appendChild(document.createTextNode("."));
+      ul.appendChild(li);
+    });
+    zone.appendChild(ul);
+    zone.appendChild(el("p", { className: "echo-note" }, reading.missed.length
+      ? "Có điều-không-chịu-nổi chưa khớp với giá trị “đã sống” nào của bạn. Có thể bạn đã bỏ sót một giá trị — hãy cân nhắc: " + reading.missed.join(", ") + ". Muốn thêm, quay lại Bước 2–3."
+      : "Chiều ngược khớp với bảng giá trị “đã sống” của bạn (dấu ✓) — một tín hiệu tốt."));
+  }
+
   /* ---------- Step 2 & Step 4: Chips ---------- */
   var bank = $("valueBank");
   var antiBank = $("antiBank");
@@ -382,6 +438,7 @@
         syncLivedState();
       } else {
         antiSkipArmed = false;
+        renderAntiEcho();
       }
       if (state.step === 2 || state.step === 4) setMsg("");
       saveProgress();
@@ -828,9 +885,72 @@
       definitions: state.definitions,
       aspirational: asp,
       antis: state.antis,
+      missed: Core.readAntis(state.antis, livedValues()).missed,
       experiences: getExperiences(),
       dateStr: Core.formatVietnameseDate(new Date())
     });
+  }
+
+  /* ---------- History: so bảng lần này với lần trước (chỉ trên trình duyệt này) ---------- */
+  function loadHistory() {
+    try {
+      return Core.sanitizeHistory(JSON.parse(window.localStorage.getItem(HISTORY_KEY) || "[]"));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHistory(list) {
+    try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(Core.sanitizeHistory(list))); } catch (e) {}
+  }
+
+  function recordHistory() {
+    var rank = currentRanking();
+    if (!rank.length) return;
+    saveHistory(Core.upsertHistory(loadHistory(), {
+      id: state.journeyId,
+      date: new Date().toISOString(),
+      ranking: rank.slice(0, 8),
+      antis: state.antis.slice()
+    }));
+  }
+
+  function renderCompare(zone, rank) {
+    var others = loadHistory().filter(function (h) { return h.id !== state.journeyId; });
+    if (!others.length) return;
+    var prev = others[others.length - 1];
+    var diff = Core.compareRankings(prev.ranking, rank.slice(0, 8));
+    var block = el("div", { className: "result-block compare" });
+    block.appendChild(el("h4", null, "So với lần làm trước (" + Core.formatVietnameseDate(new Date(prev.date)) + ")"));
+    var ul = el("ul");
+    if (diff.kept.length) {
+      ul.appendChild(el("li", null, "Bền vững: " + diff.kept.map(function (k) {
+        return k.value + (k.delta > 0 ? " (↑" + k.delta + ")" : k.delta < 0 ? " (↓" + (-k.delta) + ")" : " (giữ hạng)");
+      }).join(", ") + "."));
+    }
+    if (diff.added.length) ul.appendChild(el("li", null, "Mới xuất hiện: " + diff.added.join(", ") + "."));
+    if (diff.dropped.length) ul.appendChild(el("li", null, "Đã nhường chỗ: " + diff.dropped.join(", ") + "."));
+    block.appendChild(ul);
+    block.appendChild(el("p", { className: "echo-note" },
+      "Câu đáng hỏi: điều gì trong khoảng thời gian vừa qua đã đẩy những giá trị mới lên — và giá trị nào đã nhường chỗ vì bạn thực sự đổi ưu tiên, hay vì bạn đang lặng lẽ bỏ rơi nó?"));
+    var clr = el("button", { type: "button", className: "btn btn-ghost btn-small" }, "Xóa lịch sử các lần làm trước");
+    clr.addEventListener("click", function () {
+      if (!window.confirm("Xóa lịch sử các lần làm trước trên trình duyệt này? Bản đồ hiện tại không bị ảnh hưởng.")) return;
+      saveHistory(loadHistory().filter(function (h) { return h.id === state.journeyId; }));
+      if (block.parentNode) block.parentNode.removeChild(block);
+    });
+    block.appendChild(clr);
+    zone.appendChild(block);
+  }
+
+  function downloadFile(name, content, type) {
+    var blob = new Blob([content], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = el("a", { href: url, download: name });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
 
   function renderResult() {
@@ -884,6 +1004,12 @@
       var ul = el("ul");
       state.antis.forEach(function (a) { ul.appendChild(el("li", null, a)); });
       ab.appendChild(ul);
+      var missed = Core.readAntis(state.antis, livedValues()).missed;
+      if (missed.length) {
+        ab.appendChild(el("p", { className: "echo-note" },
+          "Đọc ngược, vài điều trong số này chỉ về những giá trị không có trong bảng của bạn: " + missed.join(", ") +
+          ". Không bắt buộc phải thêm — nhưng đáng ngẫm trong 24 giờ tới xem mình có bỏ sót không."));
+      }
       zone.appendChild(ab);
     }
 
@@ -895,6 +1021,18 @@
         asp.join(" · ") + ". Đây là hướng bạn muốn lớn lên tới, nhưng hiện tại chúng chưa điều khiển quyết định của bạn. Đừng để chúng che mất bảng giá trị thật ở trên."));
       zone.appendChild(aspB);
     }
+
+    var questions = Core.conflictQuestions(rank);
+    if (questions.length) {
+      var cf = el("div", { className: "result-block" });
+      cf.appendChild(el("h4", null, "Soi xung đột ngay với bảng của bạn"));
+      var cul = el("ul");
+      questions.forEach(function (q) { cul.appendChild(el("li", null, q)); });
+      cf.appendChild(cul);
+      zone.appendChild(cf);
+    }
+
+    renderCompare(zone, rank);
 
     var exps = getExperiences();
     if (exps.length) {
@@ -948,8 +1086,23 @@
     }, "In bản tổng kết");
     printBtn.addEventListener("click", function () { window.print(); });
 
+    var icsBtn = el("button", {
+      type: "button",
+      className: "btn btn-ghost btn-small",
+      "aria-label": "Tải file lịch nhắc soi lại sau 24 giờ, hằng tháng và hằng năm"
+    }, "Đặt lịch soi lại (.ics)");
+    icsBtn.addEventListener("click", function () {
+      downloadFile("lich-soi-lai-gia-tri.ics", Core.buildIcs({
+        ranking: currentRanking(),
+        uid: state.journeyId,
+        url: location.href.split("#")[0] + "#hanh-trinh"
+      }), "text/calendar;charset=utf-8");
+      okSpan.textContent = "Đã tạo file lịch: nhắc sau 24 giờ, hằng tháng (12 lần) và sau 1 năm, lúc 20:00. Mở file để thêm vào lịch của bạn.";
+    });
+
     actions.appendChild(copyBtn);
     actions.appendChild(dlBtn);
+    actions.appendChild(icsBtn);
     actions.appendChild(printBtn);
     actions.appendChild(okSpan);
     zone.appendChild(actions);
@@ -975,6 +1128,32 @@
     }, 350);
   }
 
+  function buildSaveData() {
+    var exps = {};
+    expAreas.forEach(function (ta) { if (ta.value.trim()) exps[ta.id] = ta.value; });
+    return {
+      version: 2,
+      journeyId: state.journeyId,
+      savedAt: new Date().toISOString(),
+      step: state.step,
+      maxStepReached: state.maxStepReached,
+      exps: exps,
+      selected: state.selected,
+      customValues: state.selected.filter(function (v) { return Core.VALUES.indexOf(v) < 0; }),
+      classify: state.classify,
+      antis: state.antis,
+      customAntis: state.antis.filter(function (v) { return Core.ANTIS.indexOf(v) < 0; }),
+      pairs: state.pairs,
+      pairIdx: state.pairIdx,
+      pairHistory: state.pairHistory,
+      pairsSig: state.pairsSig,
+      scores: state.scores,
+      ranking: state.ranking,
+      verify: state.verify,
+      definitions: state.definitions
+    };
+  }
+
   function saveProgress(manual, silent) {
     if (isRestarting) return;
     if (saveTimer) {
@@ -982,29 +1161,7 @@
       saveTimer = null;
     }
     try {
-      var exps = {};
-      expAreas.forEach(function (ta) { if (ta.value.trim()) exps[ta.id] = ta.value; });
-      var data = {
-        version: 2,
-        savedAt: new Date().toISOString(),
-        step: state.step,
-        maxStepReached: state.maxStepReached,
-        exps: exps,
-        selected: state.selected,
-        customValues: state.selected.filter(function (v) { return Core.VALUES.indexOf(v) < 0; }),
-        classify: state.classify,
-        antis: state.antis,
-        customAntis: state.antis.filter(function (v) { return Core.ANTIS.indexOf(v) < 0; }),
-        pairs: state.pairs,
-        pairIdx: state.pairIdx,
-        pairHistory: state.pairHistory,
-        pairsSig: state.pairsSig,
-        scores: state.scores,
-        ranking: state.ranking,
-        verify: state.verify,
-        definitions: state.definitions
-      };
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSaveData()));
       var timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
       var status = $("saveStatus");
       if (status && (!silent || manual)) {
@@ -1033,6 +1190,7 @@
   }
 
   function restoreSaved(d) {
+    if (d.journeyId) state.journeyId = d.journeyId;
     state.selected = d.selected;
     state.classify = d.classify;
     state.antis = d.antis;
@@ -1153,7 +1311,7 @@
   }
 
   function confirmRestart() {
-    if (window.confirm("Bắt đầu lại sẽ xóa toàn bộ những gì bạn đã viết và chọn trong hành trình này trên trình duyệt này. Bạn chắc chắn chứ?")) {
+    if (window.confirm("Bắt đầu lại sẽ xóa toàn bộ những gì bạn đã viết và chọn trong hành trình này trên trình duyệt này. (Lịch sử các bản đồ đã hoàn thành vẫn được giữ để lần sau so sánh.) Bạn chắc chắn chứ?")) {
       isRestarting = true;
       if (saveTimer) clearTimeout(saveTimer);
       try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) {}
@@ -1181,6 +1339,54 @@
 
   $("saveBtn").addEventListener("click", function () { saveProgress(true, false); });
   $("restartBtn").addEventListener("click", confirmRestart);
+
+  /* Sao lưu ra file .json để mang sang máy khác — file nằm trên máy người dùng, không gửi đi đâu */
+  var exportBtn = $("exportBtn");
+  var importBtn = $("importBtn");
+  var importFile = $("importFile");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", function () {
+      var data = buildSaveData();
+      data.history = loadHistory();
+      downloadFile("tim-gia-tri-sao-luu-" + Core.formatIsoDate(new Date()) + ".json",
+        JSON.stringify(data, null, 2), "application/json");
+      setMsg("Đã tải file sao lưu. Trên máy khác, mở trang này và bấm “Mở file sao lưu” để tiếp tục. File chứa toàn bộ những gì bạn đã viết — hãy giữ nó ở nơi riêng tư.", true);
+    });
+  }
+  if (importBtn && importFile) {
+    importBtn.addEventListener("click", function () { importFile.click(); });
+    importFile.addEventListener("change", function () {
+      var f = importFile.files && importFile.files[0];
+      importFile.value = "";
+      if (!f) return;
+      if (f.size > 2 * 1024 * 1024) {
+        setMsg("File quá lớn — đây có vẻ không phải file sao lưu của trang này.");
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var raw = null;
+        try { raw = JSON.parse(reader.result); } catch (e) {}
+        var clean = Core.sanitizeSavedState(raw);
+        if (!clean) {
+          setMsg("Không đọc được file này. Hãy chọn đúng file .json đã tải bằng nút “Sao lưu ra file”.");
+          return;
+        }
+        if (!window.confirm("Mở file sao lưu sẽ thay thế tiến trình hiện tại trên trình duyệt này. Tiếp tục?")) return;
+        try {
+          saveHistory(loadHistory().concat(Core.sanitizeHistory(raw.history)));
+          isRestarting = true;
+          if (saveTimer) clearTimeout(saveTimer);
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+          location.reload();
+        } catch (e) {
+          isRestarting = false;
+          setMsg("Trình duyệt đang chặn bộ nhớ cục bộ (có thể do chế độ ẩn danh) nên chưa mở được file sao lưu.");
+        }
+      };
+      reader.readAsText(f);
+    });
+  }
   window.addEventListener("beforeunload", function () {
     if (saveTimer) saveProgress(false, true);
   });

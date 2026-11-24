@@ -198,6 +198,9 @@
           <span class="save-status" id="saveStatus" role="status" aria-live="polite">Tiến trình sẽ tự lưu trên trình duyệt này sau mỗi bước.</span>
           <div class="wiz-tools-btns">
             <button class="btn btn-ghost btn-small" id="saveBtn" type="button">Lưu và quay lại sau</button>
+            <button class="btn btn-ghost btn-small" id="exportBtn" type="button" title="Tải toàn bộ tiến trình về máy dưới dạng file .json để mang sang máy khác">Sao lưu ra file</button>
+            <button class="btn btn-ghost btn-small" id="importBtn" type="button" title="Tiếp tục từ một file sao lưu .json">Mở file sao lưu</button>
+            <input type="file" id="importFile" accept="application/json,.json" hidden />
             <button class="btn btn-ghost btn-small" id="restartBtn" type="button">Bắt đầu lại</button>
           </div>
         </div>
@@ -266,6 +269,7 @@
           <h3>Bước 2 · Đặt tên cho giá trị</h3>
           <p class="intro">Nhìn lại những gì vừa viết ở bước 1: mỗi khoảnh khắc đang chỉ về giá trị nào? Chọn các từ <strong>vang lên</strong> với bạn từ ngân hàng từ dưới đây — chọn rộng tay, khoảng <strong>8–15 từ</strong>, bước sau sẽ lọc. Từ không có sẵn? Tự thêm từ của bạn, và giữ nguyên cách gọi của bạn. Cùng một từ mỗi người hiểu một khác, nên đừng lo chọn “đúng từ điển”.</p>
           <div id="expRefStep2"></div>
+          <p class="mention-hints" id="mentionHints" aria-live="polite"></p>
           <div class="bank-tools">
             <input type="search" id="bankSearch" placeholder="Tìm một từ… (gõ có dấu hoặc không dấu, ví dụ: tu do)" aria-label="Tìm giá trị trong ngân hàng từ" />
             <span class="bank-count" id="bankCount">Đã chọn 0 / 15</span>
@@ -298,6 +302,7 @@
             <input type="text" id="customAnti" placeholder="Thêm điều bạn không chịu nổi…" aria-label="Thêm điều không chịu nổi của riêng bạn" maxlength="40" />
             <button class="btn btn-ghost btn-small" id="addCustomAnti" type="button">+ Thêm</button>
           </div>
+          <div class="anti-echo" id="antiEcho" aria-live="polite"></div>
           <div class="tip-box"><strong>Đọc ngược lại</strong>Không chịu nổi <em>bị kiểm soát</em> → Tự do / Tự chủ đang ở rất cao. Không chịu nổi <em>giả dối</em> → Chân thành / Chính trực. Không chịu nổi <em>bị coi thường</em> → Tôn trọng / Tôn nghiêm. Đối chiếu với bảng giá trị của bạn ở bước 3: nếu chiều ngược không khớp, có thể bạn đã bỏ sót một giá trị.</div>
         </div>
 
@@ -461,7 +466,7 @@
       </details>
       <details>
         <summary>Thông tin tôi viết trong hành trình có được lưu lại không?</summary>
-        <p>Không gửi đi đâu và không lưu vào tài khoản nào. Những gì bạn nhập được tự lưu ngay trên trình duyệt và thiết bị của bạn (localStorage), sau mỗi bước — đóng trang rồi mở lại vẫn tiếp tục được, miễn là dùng cùng trình duyệt trên cùng thiết bị. Muốn xóa hẳn, bấm “Bắt đầu lại” ở đầu hành trình. Muốn giữ lại lâu dài hoặc mang sang máy khác, hãy dùng nút tải về, sao chép hoặc in ở bước kết quả.</p>
+        <p>Không gửi đi đâu và không lưu vào tài khoản nào. Những gì bạn nhập được tự lưu ngay trên trình duyệt và thiết bị của bạn (localStorage), sau mỗi bước — đóng trang rồi mở lại vẫn tiếp tục được, miễn là dùng cùng trình duyệt trên cùng thiết bị. Muốn xóa hẳn, bấm “Bắt đầu lại” ở đầu hành trình. Muốn mang sang máy khác, bấm “Sao lưu ra file” để tải một file .json về máy, rồi mở trang trên máy kia và bấm “Mở file sao lưu” — file chỉ nằm trên máy bạn, không đi qua máy chủ nào. Khi hoàn thành, top 8 giá trị được giữ lại trong lịch sử (cũng chỉ trên trình duyệt này) để lần làm lại sau trang tự so bảng mới với bảng cũ; có nút xóa lịch sử ở bước kết quả.</p>
       </details>
     </div>
   </div>

@@ -86,6 +86,34 @@
     "Bản đồ của bạn"
   ];
 
+  /**
+   * "Đọc ngược": mỗi điều không chịu nổi thường chỉ về những giá trị này.
+   * Mọi giá trị đích đều phải có trong VALUES (có unit test kiểm tra).
+   */
+  var ANTI_MAP = {
+    "Bị kiểm soát": ["Tự do", "Tự chủ", "Độc lập"],
+    "Bất công": ["Công bằng", "Chính trực"],
+    "Giả dối": ["Trung thực", "Chân thành", "Minh bạch"],
+    "Bị phản bội": ["Tin cậy", "Trung thực"],
+    "Nhàm chán": ["Phiêu lưu", "Khám phá", "Tò mò", "Sáng tạo"],
+    "Bị coi thường": ["Tôn trọng", "Tự tin"],
+    "Hỗn loạn": ["Bình an", "Cân bằng", "An toàn", "Kỷ luật"],
+    "Bị bỏ rơi": ["Gia đình", "Kết nối", "Gắn kết"],
+    "Phải tuân thủ mù quáng": ["Tự do", "Tự chủ", "Trí tuệ"],
+    "Bị phán xét": ["Tôn trọng", "Lòng trắc ẩn", "Tự do"],
+    "Cô lập": ["Kết nối", "Cộng đồng", "Gắn kết"],
+    "Bất lực": ["Tự chủ", "Thành tựu", "Ảnh hưởng"],
+    "Lãng phí thời gian": ["Thành tựu", "Kỷ luật", "Cống hiến"],
+    "Bị lợi dụng": ["Tôn trọng", "Công bằng", "Tin cậy"],
+    "Thiển cận": ["Trí tuệ", "Sâu sắc", "Học hỏi"],
+    "Bị ép buộc": ["Tự do", "Tự chủ"],
+    "Thiếu tôn trọng": ["Tôn trọng", "Tử tế"],
+    "Bị lãng quên": ["Kết nối", "Ảnh hưởng", "Gắn kết"]
+  };
+
+  var HISTORY_MAX = 10;
+  var HISTORY_TOP = 8;
+
   var LIMITS = {
     minExpChars: 10,
     minFilledExps: 3,
@@ -212,6 +240,151 @@
   }
 
   /**
+   * Đọc ngược các điều không chịu nổi so với nhóm giá trị "đã sống".
+   * rows: mỗi anti có trong ANTI_MAP kèm giá trị nó chỉ tới và giá trị đã khớp.
+   * missed: giá trị gợi ý cho những anti không khớp giá trị "đã sống" nào.
+   */
+  function readAntis(antis, lived) {
+    var livedList = Array.isArray(lived) ? lived : [];
+    var rows = [];
+    var missed = [];
+    (Array.isArray(antis) ? antis : []).forEach(function (a) {
+      var implied = ANTI_MAP[a];
+      if (!implied) return;
+      var hit = implied.filter(function (v) { return livedList.indexOf(v) >= 0; });
+      rows.push({ anti: a, implied: implied.slice(), hit: hit });
+      if (!hit.length) {
+        implied.forEach(function (v) { if (missed.indexOf(v) < 0) missed.push(v); });
+      }
+    });
+    return { rows: rows, missed: missed };
+  }
+
+  /**
+   * Find words from the value bank that the user already wrote in Step 1
+   * (accent-sensitive, whole-word match to avoid false hints).
+   */
+  function findMentionedValues(texts, values) {
+    function words(s) {
+      return " " + String(s).normalize("NFC").toLowerCase()
+        .replace(/[\s.,;:!?"“”‘’'()\[\]\-–—…\/]+/g, " ") + " ";
+    }
+    var all = words((Array.isArray(texts) ? texts : []).join(" "));
+    return (Array.isArray(values) ? values : []).filter(function (v) {
+      return all.indexOf(words(v)) >= 0;
+    });
+  }
+
+  /**
+   * Compare the current ranking with a previous one.
+   * kept: [{value, delta}] where delta > 0 means moved up.
+   */
+  function compareRankings(prev, now) {
+    var p = Array.isArray(prev) ? prev : [];
+    var n = Array.isArray(now) ? now : [];
+    return {
+      kept: n.filter(function (v) { return p.indexOf(v) >= 0; }).map(function (v) {
+        return { value: v, delta: p.indexOf(v) - n.indexOf(v) };
+      }),
+      added: n.filter(function (v) { return p.indexOf(v) < 0; }),
+      dropped: p.filter(function (v) { return n.indexOf(v) < 0; })
+    };
+  }
+
+  /**
+   * Validate a history list (from localStorage or a backup file).
+   */
+  function sanitizeHistory(raw) {
+    if (!Array.isArray(raw)) return [];
+    var out = [];
+    var seen = {};
+    raw.forEach(function (h) {
+      if (!h || typeof h !== "object" || typeof h.id !== "string" || !h.id) return;
+      if (typeof h.date !== "string" || isNaN(new Date(h.date).getTime())) return;
+      var ranking = uniqueStrings(h.ranking).slice(0, HISTORY_TOP);
+      if (!ranking.length || seen[h.id]) return;
+      seen[h.id] = true;
+      out.push({ id: h.id, date: h.date, ranking: ranking, antis: uniqueStrings(h.antis) });
+    });
+    out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return out.slice(-HISTORY_MAX);
+  }
+
+  /**
+   * Insert or replace this journey's entry, keeping the newest HISTORY_MAX entries.
+   */
+  function upsertHistory(history, entry) {
+    var list = sanitizeHistory(history).filter(function (h) { return h.id !== entry.id; });
+    list.push(entry);
+    return sanitizeHistory(list);
+  }
+
+  /* --- Lịch nhắc .ics (RFC 5545) --- */
+  function icsEscape(s) {
+    return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  }
+  function utf8Length(ch) {
+    var c = ch.codePointAt(0);
+    return c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4;
+  }
+  function icsFold(line) {
+    // Mỗi dòng tối đa 75 byte UTF-8; dòng nối tiếp bắt đầu bằng 1 dấu cách
+    var out = [];
+    var cur = "";
+    var len = 0;
+    Array.from(line).forEach(function (ch) {
+      var n = utf8Length(ch);
+      if (len + n > (out.length ? 74 : 75)) { out.push(cur); cur = ""; len = 0; }
+      cur += ch;
+      len += n;
+    });
+    out.push(cur);
+    return out.join("\r\n ");
+  }
+  function icsLocal(d) {
+    function p(n) { return String(n).padStart(2, "0"); }
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "T" + p(d.getHours()) + p(d.getMinutes()) + "00";
+  }
+
+  /**
+   * Build a calendar file with 3 reminders at 20:00 local time:
+   * 24h review, monthly review (12 times), and redo the journey after 1 year.
+   */
+  function buildIcs(opts) {
+    var now = opts.now instanceof Date ? opts.now : new Date();
+    var uid = opts.uid || String(now.getTime());
+    var top = (Array.isArray(opts.ranking) ? opts.ranking : []).slice(0, LIMITS.topDefineCount)
+      .map(function (v, i) { return (i + 1) + ". " + v; }).join("\n");
+    function at(days, months) {
+      return new Date(now.getFullYear(), now.getMonth() + (months || 0), now.getDate() + (days || 0), 20, 0, 0);
+    }
+    var events = [
+      { start: at(1), mins: 20, title: "Soi lại bản đồ giá trị (quy tắc 24 giờ)",
+        desc: "Đọc lại danh sách khi đầu óc đã nghỉ. Câu nào vẫn “đúng” khi bạn không cố nghĩ về nó?\n\nTop 5 hôm qua:\n" + top },
+      { start: at(0, 1), mins: 60, title: "Soi lại giá trị hằng tháng (1 giờ)", rrule: "FREQ=MONTHLY;COUNT=12",
+        desc: "Tháng qua mình đã sống giá trị nào, bằng việc gì cụ thể? Vi phạm ở đâu, vì sao? Có xung đột mới nào không?\n\nTop 5:\n" + top },
+      { start: at(0, 12), mins: 60, title: "Làm lại hành trình tìm giá trị (hằng năm)",
+        desc: "Làm lại từ Bước 1, không nhìn bảng cũ trước. Trang sẽ tự so bảng mới với bảng cũ." + (opts.url ? "\n\n" + opts.url : "") }
+    ];
+    var stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Tim Gia Tri//VI", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+    events.forEach(function (ev, i) {
+      lines.push("BEGIN:VEVENT");
+      lines.push("UID:" + uid + "-" + i + "@tim-gia-tri");
+      lines.push("DTSTAMP:" + stamp);
+      lines.push("DTSTART:" + icsLocal(ev.start));
+      lines.push("DTEND:" + icsLocal(new Date(ev.start.getTime() + ev.mins * 60000)));
+      if (ev.rrule) lines.push("RRULE:" + ev.rrule);
+      lines.push("SUMMARY:" + icsEscape(ev.title));
+      lines.push("DESCRIPTION:" + icsEscape(ev.desc));
+      lines.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape(ev.title), "TRIGGER:-PT10M", "END:VALARM");
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return lines.map(icsFold).join("\r\n") + "\r\n";
+  }
+
+  /**
    * Build the plain-text export summary for copy and .txt download.
    */
   function buildSummaryText(payload) {
@@ -221,6 +394,7 @@
     var antis = Array.isArray(payload.antis) ? payload.antis : [];
     var experiences = Array.isArray(payload.experiences) ? payload.experiences : [];
     var dateStr = payload.dateStr || formatVietnameseDate(new Date());
+    var missed = Array.isArray(payload.missed) ? payload.missed : [];
 
     var lines = [];
     lines.push("BẢN ĐỒ GIÁ TRỊ CỐT LÕI CỦA TÔI");
@@ -247,6 +421,12 @@
       lines.push("  " + antis.join(" · "));
     }
 
+    if (missed.length) {
+      lines.push("");
+      lines.push("CÓ THỂ ĐÃ BỎ SÓT (đọc ngược từ điều không chịu nổi):");
+      lines.push("  " + missed.join(" · "));
+    }
+
     if (experiences.length) {
       lines.push("");
       lines.push("BẰNG CHỨNG SỐNG CỦA TÔI:");
@@ -255,11 +435,30 @@
       });
     }
 
+    if (rank.length >= 2) {
+      lines.push("");
+      lines.push("BA CÂU TỰ SOI XUNG ĐỘT:");
+      conflictQuestions(rank).forEach(function (q) { lines.push("- " + q); });
+    }
+
     lines.push("");
     lines.push("----------------------------------------");
     lines.push("Nhắc mình: soi lại sau 24 giờ, rồi hằng tháng và làm lại hằng năm.");
     lines.push("Đừng hỏi “mình muốn trở thành người thế nào?” — hãy hỏi “đời mình đã chứng minh mình là người thế nào?”");
     return lines.join("\n");
+  }
+
+  /**
+   * Three conflict questions personalised with the user's own ranking.
+   */
+  function conflictQuestions(rank) {
+    if (!Array.isArray(rank) || rank.length < 2) return [];
+    var last = rank[Math.min(rank.length, LIMITS.topDefineCount) - 1];
+    return [
+      "Việc gì bạn đang làm mỗi tuần đang vi phạm “" + rank[0] + "” hoặc “" + rank[1] + "”?",
+      "“" + rank[0] + "” và “" + rank[1] + "” có đang triệt tiêu nhau trong cách bạn sống hiện tại không?",
+      "Nếu chỉ nhượng bộ một chút ở “" + last + "” để cứu “" + rank[0] + "”, nhượng bộ đó trông thế nào?"
+    ];
   }
 
   /**
@@ -376,6 +575,7 @@
 
     return {
       version: 2,
+      journeyId: typeof raw.journeyId === "string" && /^[a-z0-9]{6,40}$/.test(raw.journeyId) ? raw.journeyId : "",
       savedAt: typeof raw.savedAt === "string" ? raw.savedAt : null,
       step: step,
       maxStepReached: maxStepReached,
@@ -404,6 +604,14 @@
     EXPERIENCE_FIELDS: EXPERIENCE_FIELDS,
     STEP_NAMES: STEP_NAMES,
     LIMITS: LIMITS,
+    ANTI_MAP: ANTI_MAP,
+    readAntis: readAntis,
+    findMentionedValues: findMentionedValues,
+    compareRankings: compareRankings,
+    sanitizeHistory: sanitizeHistory,
+    upsertHistory: upsertHistory,
+    buildIcs: buildIcs,
+    conflictQuestions: conflictQuestions,
     normalizeText: normalizeText,
     cleanLabel: cleanLabel,
     valuesSignature: valuesSignature,
